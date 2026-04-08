@@ -28,10 +28,20 @@ export default function PublishDialog({ state, onClose }: Props) {
   async function handlePublish() {
     if (hasErrors) return;
 
-    setStatus('publishing');
-    setStep('Förbereder data...');
+    setStatus('validating');
+    setStep('Kontrollerar slug...');
 
     try {
+      const checkRes = await fetch(`/api/check-slug?slug=${encodeURIComponent(state.slug)}`);
+      const checkData = await checkRes.json();
+
+      if (checkData.exists) {
+        setResult({ error: `Slug "${state.slug}" finns redan. Välj ett annat slug.` });
+        setStatus('error');
+        return;
+      }
+
+      setStatus('publishing');
       setStep('Skapar sida via Claude + Airtable MCP...');
 
       const response = await fetch('/api/publish', {
@@ -110,29 +120,25 @@ export default function PublishDialog({ state, onClose }: Props) {
             </>
           )}
 
-          {status === 'publishing' && (
+          {(status === 'validating' || status === 'publishing') && (
             <div className="text-center py-6">
               <div className="inline-block w-8 h-8 border-3 border-lp-main border-t-transparent rounded-full animate-spin mb-3" />
               <p className="text-sm text-lp-text">{step}</p>
-              <p className="text-xs text-lp-text-light mt-1">Detta kan ta 10-20 sekunder...</p>
+              {status === 'publishing' && (
+                <p className="text-xs text-lp-text-light mt-1">Detta kan ta 10-20 sekunder...</p>
+              )}
             </div>
           )}
 
           {status === 'success' && (
-            <div className="text-center py-4">
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
-                <span className="text-green-600 text-xl">✓</span>
+            <div className="text-center py-10">
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
+                <span className="text-green-600 text-4xl">✓</span>
               </div>
-              <p className="text-sm font-medium text-lp-text mb-1">Sidan har publicerats!</p>
-              <p className="text-xs text-lp-text-light">
-                Slug: <strong>{result.slug}</strong> — {result.tabCount} tabs skapade
+              <p className="text-2xl font-bold text-lp-text mb-3">Sidan har publicerats!</p>
+              <p className="text-lg text-lp-text-light">
+                Slug: <strong className="text-lp-text">{result.slug}</strong>
               </p>
-              <p className="text-xs text-lp-text-light mt-2">
-                Sidan visas på wexoe.se inom 5 minuter (Airtable-cache).
-              </p>
-              {result.recordId && (
-                <p className="text-xs text-gray-400 mt-2">Record ID: {result.recordId}</p>
-              )}
             </div>
           )}
 
