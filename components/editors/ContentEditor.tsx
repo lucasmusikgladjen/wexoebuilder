@@ -13,19 +13,16 @@ export default function ContentEditor({ state, dispatch }: Props) {
     dispatch({ type: 'SET_FIELD', field, value });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-lp-text">Innehåll</h3>
-        <FieldCheckbox
-          label="Visa"
-          checked={state.showContent}
-          onChange={(v) => set('showContent', v)}
-        />
-      </div>
+    <div className="space-y-3">
+      <FieldCheckbox
+        label="Innehåll"
+        checked={state.showContent}
+        onChange={(v) => set('showContent', v)}
+      />
       {state.showContent && (
         <>
           <FieldInput
-            label="H2 — Underrubrik"
+            label="Rubrik"
             value={state.contentH2}
             onChange={(v) => set('contentH2', v)}
             placeholder="T.ex. Vad är FTTO?"

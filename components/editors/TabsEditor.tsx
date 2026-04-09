@@ -3,16 +3,16 @@
 import { PageState, PageAction, Tab, TabType } from '@/lib/types';
 import { FieldInput, FieldTextarea, FieldSelect, FieldCheckbox } from './FieldInput';
 
-// Re-usable small item card with remove button
-function ItemCard({ index, onRemove, children }: { index?: number; onRemove: () => void; children: React.ReactNode }) {
+function ItemCard({ onRemove, children }: { onRemove: () => void; children: React.ReactNode }) {
   return (
-    <div className="border border-gray-200 rounded-lg p-3 space-y-2 relative bg-white">
-      <div className="flex items-center justify-between mb-1">
-        {index !== undefined && (
-          <span className="text-xs font-semibold text-lp-main">{index + 1}.</span>
-        )}
-        <button onClick={onRemove} className="text-xs text-gray-400 hover:text-red-500 ml-auto" title="Ta bort">✕</button>
-      </div>
+    <div className="group border border-lp-border rounded-md p-2.5 space-y-2 relative">
+      <button
+        onClick={onRemove}
+        className="absolute top-1.5 right-1.5 text-gray-300 hover:text-red-500 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Ta bort"
+      >
+        ✕
+      </button>
       {children}
     </div>
   );
@@ -44,11 +44,8 @@ export default function TabsEditor({ state, dispatch }: Props) {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-lp-text">Tabs</h3>
-        <FieldCheckbox label="Visa" checked={state.showTabs} onChange={(v) => set('showTabs', v)} />
-      </div>
+    <div className="space-y-3">
+      <FieldCheckbox label="Tabs" checked={state.showTabs} onChange={(v) => set('showTabs', v)} />
       {state.showTabs && (
         <>
           {state.tabs.map((tab, index) => (
@@ -65,7 +62,7 @@ export default function TabsEditor({ state, dispatch }: Props) {
           ))}
           <button
             onClick={() => dispatch({ type: 'ADD_TAB' })}
-            className="w-full py-2 px-4 border-2 border-dashed border-lp-border rounded-lg text-sm text-lp-text-light hover:border-lp-main hover:text-lp-main transition-colors"
+            className="w-full py-1.5 border border-dashed border-lp-border rounded-md text-xs text-lp-text-light hover:border-lp-main hover:text-lp-main transition-colors"
           >
             + Lägg till tab
           </button>
@@ -96,9 +93,9 @@ function TabEditor({
     dispatch({ type: 'SET_TAB_FIELD', tabId: tab.id, field, value });
 
   return (
-    <div className="border border-lp-border rounded-lg bg-white overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border-b border-lp-border">
-        <span className="text-xs font-semibold text-lp-main w-5 text-center">{index + 1}</span>
+    <div className="border border-lp-border rounded-md overflow-hidden">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border-b border-lp-border">
+        <span className="text-[10px] text-lp-text-light w-4 text-center">{index + 1}</span>
         <input
           value={tab.name}
           onChange={(e) => setField('name', e.target.value)}
@@ -133,10 +130,10 @@ function TabEditor({
 function TextImageFields({ tab, setField }: { tab: Tab; setField: (f: keyof Tab, v: unknown) => void }) {
   return (
     <>
-      <FieldInput label="H2" value={tab.tiH2} onChange={(v) => setField('tiH2', v)} placeholder="Rubrik för tabben" />
+      <FieldInput label="Rubrik" value={tab.tiH2} onChange={(v) => setField('tiH2', v)} placeholder="Rubrik för tabben" />
       <FieldTextarea label="Text" value={tab.tiText} onChange={(v) => setField('tiText', v)} rows={3} />
       <FieldTextarea label="Benefits" value={tab.tiBenefits} onChange={(v) => setField('tiBenefits', v)} rows={3} hint="en per rad" placeholder={"Fördel 1\nFördel 2\nFördel 3"} />
-      <FieldInput label="Bild (URL)" value={tab.tiImage} onChange={(v) => setField('tiImage', v)} placeholder="https://..." />
+      <FieldInput label="Bild" value={tab.tiImage} onChange={(v) => setField('tiImage', v)} placeholder="https://..." />
       <FieldCheckbox label="Inverterad layout (bild till vänster)" checked={tab.tiInverted} onChange={(v) => setField('tiInverted', v)} />
     </>
   );
@@ -144,15 +141,15 @@ function TextImageFields({ tab, setField }: { tab: Tab; setField: (f: keyof Tab,
 
 function FullMediaFields({ tab, setField }: { tab: Tab; setField: (f: keyof Tab, v: unknown) => void }) {
   return (
-    <FieldInput label="URL (bild eller YouTube)" value={tab.fmUrl} onChange={(v) => setField('fmUrl', v)} placeholder="https://youtube.com/watch?v=... eller https://wexoe.se/bild.jpg" />
+    <FieldInput label="URL" value={tab.fmUrl} onChange={(v) => setField('fmUrl', v)} placeholder="https://youtube.com/watch?v=... eller bild-URL" />
   );
 }
 
 function FaqFields({ tab, dispatch }: { tab: Tab; dispatch: React.Dispatch<PageAction> }) {
   return (
     <div className="space-y-3">
-      {tab.faqItems.map((item, i) => (
-        <ItemCard key={item.id} index={i} onRemove={() => dispatch({ type: 'REMOVE_FAQ_ITEM', tabId: tab.id, itemId: item.id })}>
+      {tab.faqItems.map((item) => (
+        <ItemCard key={item.id} onRemove={() => dispatch({ type: 'REMOVE_FAQ_ITEM', tabId: tab.id, itemId: item.id })}>
           <FieldInput
             label="Fråga"
             value={item.question}
@@ -170,7 +167,7 @@ function FaqFields({ tab, dispatch }: { tab: Tab; dispatch: React.Dispatch<PageA
       ))}
       <button
         onClick={() => dispatch({ type: 'ADD_FAQ_ITEM', tabId: tab.id })}
-        className="w-full py-1.5 px-3 border border-dashed border-gray-300 rounded-lg text-xs text-lp-text-light hover:border-lp-main hover:text-lp-main transition-colors"
+        className="w-full py-1.5 border border-dashed border-lp-border rounded-md text-xs text-lp-text-light hover:border-lp-main hover:text-lp-main transition-colors"
       >
         + Lägg till fråga
       </button>
@@ -205,27 +202,18 @@ function DownloadFields({ tab, dispatch }: { tab: Tab; dispatch: React.Dispatch<
   return (
     <div className="space-y-3">
       {tab.downloads.map((dl) => (
-        <div key={dl.id} className="border border-gray-200 rounded p-2 space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-medium text-lp-text-light">Nedladdning</span>
-            <button
-              onClick={() => dispatch({ type: 'REMOVE_DOWNLOAD', tabId: tab.id, downloadId: dl.id })}
-              className="text-xs text-gray-400 hover:text-red-500"
-            >
-              ✕
-            </button>
-          </div>
+        <ItemCard key={dl.id} onRemove={() => dispatch({ type: 'REMOVE_DOWNLOAD', tabId: tab.id, downloadId: dl.id })}>
           <FieldInput label="Namn" value={dl.name} onChange={(v) => dispatch({ type: 'SET_DOWNLOAD_FIELD', tabId: tab.id, downloadId: dl.id, field: 'name', value: v })} placeholder="Produktblad FTTO" />
           <FieldInput label="Beskrivning" value={dl.description} onChange={(v) => dispatch({ type: 'SET_DOWNLOAD_FIELD', tabId: tab.id, downloadId: dl.id, field: 'description', value: v })} placeholder="Teknisk specifikation..." />
           <div className="grid grid-cols-2 gap-2">
             <FieldInput label="Fil-URL" value={dl.fileUrl} onChange={(v) => dispatch({ type: 'SET_DOWNLOAD_FIELD', tabId: tab.id, downloadId: dl.id, field: 'fileUrl', value: v })} placeholder="https://..." />
             <FieldInput label="Filtyp" value={dl.fileType} onChange={(v) => dispatch({ type: 'SET_DOWNLOAD_FIELD', tabId: tab.id, downloadId: dl.id, field: 'fileType', value: v })} placeholder="PDF" />
           </div>
-        </div>
+        </ItemCard>
       ))}
       <button
         onClick={() => dispatch({ type: 'ADD_DOWNLOAD', tabId: tab.id })}
-        className="w-full py-1.5 px-3 border border-dashed border-gray-300 rounded text-xs text-lp-text-light hover:border-lp-main hover:text-lp-main transition-colors"
+        className="w-full py-1.5 border border-dashed border-lp-border rounded-md text-xs text-lp-text-light hover:border-lp-main hover:text-lp-main transition-colors"
       >
         + Lägg till nedladdning
       </button>
@@ -241,10 +229,9 @@ function CompareFields({ tab, setField, dispatch }: { tab: Tab; setField: (f: ke
         <FieldInput label="Kolumn A" value={tab.compareColA} onChange={(v) => setField('compareColA', v)} placeholder="FTTO" />
         <FieldInput label="Kolumn B" value={tab.compareColB} onChange={(v) => setField('compareColB', v)} placeholder="Traditionellt" />
       </div>
-      {/* Table-style row editor */}
       {tab.compareRows.length > 0 && (
-        <div className="space-y-2">
-          <div className="grid grid-cols-[1fr_1fr_1fr_24px] gap-1.5 text-xs font-medium text-lp-text-light px-0.5">
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-[1fr_1fr_1fr_24px] gap-1.5 text-[10px] text-lp-text-light px-0.5">
             <span>Egenskap</span>
             <span>{tab.compareColA || 'Kolumn A'}</span>
             <span>{tab.compareColB || 'Kolumn B'}</span>
@@ -281,7 +268,7 @@ function CompareFields({ tab, setField, dispatch }: { tab: Tab; setField: (f: ke
       )}
       <button
         onClick={() => dispatch({ type: 'ADD_COMPARE_ROW', tabId: tab.id })}
-        className="w-full py-1.5 px-3 border border-dashed border-gray-300 rounded-lg text-xs text-lp-text-light hover:border-lp-main hover:text-lp-main transition-colors"
+        className="w-full py-1.5 border border-dashed border-lp-border rounded-md text-xs text-lp-text-light hover:border-lp-main hover:text-lp-main transition-colors"
       >
         + Lägg till rad
       </button>
@@ -295,7 +282,7 @@ function StepsFields({ tab, setField, dispatch }: { tab: Tab; setField: (f: keyo
       <FieldInput label="Titel" value={tab.stepsTitle} onChange={(v) => setField('stepsTitle', v)} placeholder="Så här kommer du igång" />
       <div className="space-y-3">
         {tab.stepsItems.map((item, i) => (
-          <ItemCard key={item.id} index={i} onRemove={() => dispatch({ type: 'REMOVE_STEP_ITEM', tabId: tab.id, itemId: item.id })}>
+          <ItemCard key={item.id} onRemove={() => dispatch({ type: 'REMOVE_STEP_ITEM', tabId: tab.id, itemId: item.id })}>
             <FieldInput
               label="Rubrik"
               value={item.title}
@@ -313,7 +300,7 @@ function StepsFields({ tab, setField, dispatch }: { tab: Tab; setField: (f: keyo
         ))}
         <button
           onClick={() => dispatch({ type: 'ADD_STEP_ITEM', tabId: tab.id })}
-          className="w-full py-1.5 px-3 border border-dashed border-gray-300 rounded-lg text-xs text-lp-text-light hover:border-lp-main hover:text-lp-main transition-colors"
+          className="w-full py-1.5 border border-dashed border-lp-border rounded-md text-xs text-lp-text-light hover:border-lp-main hover:text-lp-main transition-colors"
         >
           + Lägg till steg
         </button>
