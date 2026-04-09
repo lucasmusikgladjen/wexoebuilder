@@ -21,24 +21,20 @@ export default function SidebarEditor({ state, dispatch }: Props) {
     dispatch({ type: 'SET_FIELD', field, value });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-lp-text">Sidebar</h3>
-        <FieldCheckbox
-          label="Visa"
-          checked={state.showSidebar}
-          onChange={(v) => set('showSidebar', v)}
-        />
-      </div>
+    <div className="space-y-3">
+      <FieldCheckbox
+        label="Sidebar"
+        checked={state.showSidebar}
+        onChange={(v) => set('showSidebar', v)}
+      />
       {state.showSidebar && (
         <>
           <FieldSelect
-            label="Sidebar-typ"
+            label="Typ"
             value={state.sidebarType}
             onChange={(v) => set('sidebarType', v as SidebarType)}
             options={sidebarOptions}
           />
-
           {state.sidebarType === 'case' && <CaseFields state={state} set={set} />}
           {state.sidebarType === 'calculator' && <CalculatorFields state={state} set={set} />}
           {state.sidebarType === 'event' && <EventFields state={state} set={set} />}
@@ -51,14 +47,14 @@ export default function SidebarEditor({ state, dispatch }: Props) {
 
 function CaseFields({ state, set }: { state: PageState; set: (f: keyof PageState, v: unknown) => void }) {
   return (
-    <div className="space-y-3 border-l-2 border-lp-secondary pl-3">
+    <div className="space-y-3">
       <FieldInput label="Titel" value={state.caseTitle} onChange={(v) => set('caseTitle', v)} placeholder="Kundcase: Företaget AB" />
       <FieldTextarea label="Beskrivning" value={state.caseDescription} onChange={(v) => set('caseDescription', v)} rows={3} placeholder="Kort beskrivning av caset..." />
-      <FieldInput label="Bild (URL)" value={state.caseImage} onChange={(v) => set('caseImage', v)} placeholder="https://..." />
-      <FieldTextarea label="Utfall / Resultat" value={state.caseOutcomes} onChange={(v) => set('caseOutcomes', v)} rows={3} hint="en per rad" placeholder={"40% snabbare installation\n60% lägre driftkostnad"} />
+      <FieldInput label="Bild" value={state.caseImage} onChange={(v) => set('caseImage', v)} placeholder="https://..." />
+      <FieldTextarea label="Resultat" value={state.caseOutcomes} onChange={(v) => set('caseOutcomes', v)} rows={3} hint="en per rad" placeholder={"40% snabbare installation\n60% lägre driftkostnad"} />
       <div className="grid grid-cols-2 gap-2">
-        <FieldInput label="CTA-text" value={state.caseCta} onChange={(v) => set('caseCta', v)} placeholder="Läs hela caset" />
-        <FieldInput label="CTA-URL" value={state.caseCtaUrl} onChange={(v) => set('caseCtaUrl', v)} placeholder="/kundcase/..." />
+        <FieldInput label="CTA text" value={state.caseCta} onChange={(v) => set('caseCta', v)} placeholder="Läs hela caset" />
+        <FieldInput label="CTA url" value={state.caseCtaUrl} onChange={(v) => set('caseCtaUrl', v)} placeholder="/kundcase/..." />
       </div>
     </div>
   );
@@ -66,16 +62,16 @@ function CaseFields({ state, set }: { state: PageState; set: (f: keyof PageState
 
 function CalculatorFields({ state, set }: { state: PageState; set: (f: keyof PageState, v: unknown) => void }) {
   return (
-    <div className="space-y-3 border-l-2 border-lp-secondary pl-3">
+    <div className="space-y-3">
       <FieldInput label="Titel" value={state.calcTitle} onChange={(v) => set('calcTitle', v)} placeholder="Beräkna din besparing" />
-      <FieldTextarea label="HTML/CSS/JS-kod" value={state.calcHtml} onChange={(v) => set('calcHtml', v)} rows={6} placeholder="<div class='calc'>...</div>" />
+      <FieldTextarea label="HTML/CSS/JS" value={state.calcHtml} onChange={(v) => set('calcHtml', v)} rows={6} placeholder="<div class='calc'>...</div>" />
     </div>
   );
 }
 
 function EventFields({ state, set }: { state: PageState; set: (f: keyof PageState, v: unknown) => void }) {
   return (
-    <div className="space-y-3 border-l-2 border-lp-secondary pl-3">
+    <div className="space-y-3">
       <FieldSelect label="Typ" value={state.eventType} onChange={(v) => set('eventType', v)} options={[
         { value: '', label: 'Välj typ...' },
         { value: 'webinar', label: 'Webinar' },
@@ -89,14 +85,14 @@ function EventFields({ state, set }: { state: PageState; set: (f: keyof PageStat
         <FieldInput label="Datum" value={state.eventDate} onChange={(v) => set('eventDate', v)} type="date" />
         <FieldInput label="Plats" value={state.eventLocation} onChange={(v) => set('eventLocation', v)} placeholder="Online / Stockholm" />
       </div>
-      <FieldInput label="Webhook-URL (Make.com)" value={state.eventWebhook} onChange={(v) => set('eventWebhook', v)} placeholder="https://hook.eu2.make.com/..." />
+      <FieldInput label="Webhook" value={state.eventWebhook} onChange={(v) => set('eventWebhook', v)} placeholder="https://hook.eu2.make.com/..." />
     </div>
   );
 }
 
 function LeadMagnetFields({ state, set }: { state: PageState; set: (f: keyof PageState, v: unknown) => void }) {
   return (
-    <div className="space-y-3 border-l-2 border-lp-secondary pl-3">
+    <div className="space-y-3">
       <FieldInput label="Titel" value={state.magnetTitle} onChange={(v) => set('magnetTitle', v)} placeholder="Ladda ner vår guide" />
       <FieldSelect label="Format" value={state.magnetFormat} onChange={(v) => set('magnetFormat', v)} options={[
         { value: '', label: 'Välj format...' },
@@ -107,7 +103,7 @@ function LeadMagnetFields({ state, set }: { state: PageState; set: (f: keyof Pag
       ]} />
       <FieldTextarea label="Beskrivning" value={state.magnetDescription} onChange={(v) => set('magnetDescription', v)} rows={3} />
       <FieldInput label="Fil-URL" value={state.magnetFileUrl} onChange={(v) => set('magnetFileUrl', v)} placeholder="https://wexoe.se/wp-content/uploads/..." />
-      <FieldInput label="Webhook-URL (Make.com)" value={state.magnetWebhook} onChange={(v) => set('magnetWebhook', v)} placeholder="https://hook.eu2.make.com/..." />
+      <FieldInput label="Webhook" value={state.magnetWebhook} onChange={(v) => set('magnetWebhook', v)} placeholder="https://hook.eu2.make.com/..." />
     </div>
   );
 }
