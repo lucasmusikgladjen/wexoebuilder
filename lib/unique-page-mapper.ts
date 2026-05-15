@@ -129,7 +129,7 @@ export function uniquePageStateFromRecord(rec: AirtableRecord): UniquePageState 
 
   // Contact Form — snake_case-prefixed fält i cms_unique_pages.
   state.showContactForm = asBool(f['show_contact_form']);
-  state.contactForm = contactFormFromFields(f, 'contact_form_');
+  state.contactForm = contactFormFromFields(f, 'snake_case');
 
   return state;
 }
@@ -212,7 +212,7 @@ export function uniquePageStateToFields(
     'cta_banner_theme': state.ctaBanner.theme,
 
     'show_contact_form': state.showContactForm,
-    ...contactFormToFields(state.contactForm, { prefix: 'contact_form_', nullForEmpty: true }),
+    ...contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: true }),
   };
 
   const out: Record<string, unknown> = {};

@@ -2,12 +2,17 @@
  * Bidirektional mappning för contact-form-fält i sidtyps-records.
  *
  * Contact-form-blocket återanvänds av flera sidtyper (audience, product-area,
- * unique-page, ...) och har historiskt definierats om i varje mapper.
+ * unique-page, ...). Sidtyperna ligger i olika baser och olika naming-eror:
  *
- * Fältnamnen prefixas så samma block kan ligga i flera tabeller. Default
- * är `Contact Form ` (Title Case) som matchar nuvarande Airtable-schema.
- * Vid framtida snake_case-rename räcker det att uppdatera default-prefixet
- * (eller skicka ett eget per anrop).
+ * - Legacy-basen (audience, m.fl.) — Title Case-fält:
+ *   `Contact Form Eyebrow`, `Contact Form Show Company`, etc.
+ * - Wexoe NY (cms_*-tabellerna) — snake_case-fält:
+ *   `contact_form_eyebrow`, `contact_form_show_company`, etc.
+ *
+ * Schemat väljs via `schema`-parametern. `title_case` är default för
+ * bakåtkompat med audience/product-area-mappers, men nya callsites (cms_*) ska
+ * skicka `snake_case`. Internt mappar funktionen mellan ContactFormState-fält
+ * och Airtable-fältnamn för rätt schema.
  *
  * Read-sidan använder `emptyContactFormState()` som fallback när record:en
  * saknar toggle-fält — så defaults som "Show Company = true" består även
@@ -25,63 +30,132 @@ import {
   emptyContactFormState,
 } from './contact-form-types';
 
-export const CONTACT_FORM_FIELD_PREFIX = 'Contact Form ';
+export type ContactFormSchema = 'title_case' | 'snake_case';
 
-const CONTACT_FORM_FIELD_NAMES = {
-  eyebrow: { title: 'Eyebrow', snake: 'eyebrow' },
-  title: { title: 'Title', snake: 'title' },
-  subtitle: { title: 'Subtitle', snake: 'subtitle' },
-  layout: { title: 'Layout', snake: 'layout' },
-  theme: { title: 'Theme', snake: 'theme' },
-  showCompany: { title: 'Show Company', snake: 'show_company' },
-  showPhone: { title: 'Show Phone', snake: 'show_phone' },
-  showDropdown: { title: 'Show Dropdown', snake: 'show_dropdown' },
-  dropdownLabel: { title: 'Dropdown Label', snake: 'dropdown_label' },
-  options: { title: 'Options', snake: 'options' },
-  ctaText: { title: 'CTA Text', snake: 'cta_text' },
-  messageLabel: { title: 'Message Label', snake: 'message_label' },
-  trustSignals: { title: 'Trust Signals', snake: 'trust_signals' },
-  showContactPerson: { title: 'Show Contact Person', snake: 'show_contact_person' },
-} as const;
+interface SchemaSpec {
+  prefix: string;
+  /** Map från ContactFormState-fält → Airtable-fältnamn (utan prefix). */
+  keys: {
+    eyebrow: string;
+    title: string;
+    subtitle: string;
+    layout: string;
+    theme: string;
+    showCompany: string;
+    showPhone: string;
+    showDropdown: string;
+    dropdownLabel: string;
+    options: string;
+    ctaText: string;
+    messageLabel: string;
+    trustSignals: string;
+    showContactPerson: string;
+  };
+}
 
-type ContactFormFieldKey = keyof typeof CONTACT_FORM_FIELD_NAMES;
+const SCHEMAS: Record<ContactFormSchema, SchemaSpec> = {
+  title_case: {
+    prefix: 'Contact Form ',
+    keys: {
+      eyebrow: 'Eyebrow',
+      title: 'Title',
+      subtitle: 'Subtitle',
+      layout: 'Layout',
+      theme: 'Theme',
+      showCompany: 'Show Company',
+      showPhone: 'Show Phone',
+      showDropdown: 'Show Dropdown',
+      dropdownLabel: 'Dropdown Label',
+      options: 'Options',
+      ctaText: 'CTA Text',
+      messageLabel: 'Message Label',
+      trustSignals: 'Trust Signals',
+      showContactPerson: 'Show Contact Person',
+    },
+  },
+  snake_case: {
+    prefix: 'contact_form_',
+    keys: {
+      eyebrow: 'eyebrow',
+      title: 'title',
+      subtitle: 'subtitle',
+      layout: 'layout',
+      theme: 'theme',
+      showCompany: 'show_company',
+      showPhone: 'show_phone',
+      showDropdown: 'show_dropdown',
+      dropdownLabel: 'dropdown_label',
+      options: 'options',
+      ctaText: 'cta_text',
+      messageLabel: 'message_label',
+      trustSignals: 'trust_signals',
+      showContactPerson: 'show_contact_person',
+    },
+  },
+};
+
+/** @deprecated Kept for callers that still reference the constant directly. */
+export const CONTACT_FORM_FIELD_PREFIX = SCHEMAS.title_case.prefix;
+
+type ContactFormFieldKey = keyof SchemaSpec['keys'];
+
+function isContactFormSchema(value: string): value is ContactFormSchema {
+  return value === 'title_case' || value === 'snake_case';
+}
 
 function contactFormFieldName(prefix: string, key: ContactFormFieldKey): string {
-  const names = CONTACT_FORM_FIELD_NAMES[key];
-  // Snake-case prefixes (`contact_form_`) compose with snake suffixes, while
-  // legacy Airtable display-name prefixes (`Contact Form `) compose with
-  // Title Case suffixes. This keeps old Audience/PA fields and newer
-  // landing/unique snake_case fields both working through the shared mapper.
-  return `${prefix}${prefix.endsWith('_') ? names.snake : names.title}`;
+  const suffixSchema = prefix.endsWith('_') ? SCHEMAS.snake_case : SCHEMAS.title_case;
+  return `${prefix}${suffixSchema.keys[key]}`;
+}
+
+function resolveContactFormFieldName(
+  schemaOrPrefix: ContactFormSchema | string | undefined,
+  key: ContactFormFieldKey,
+): string {
+  if (!schemaOrPrefix) {
+    return `${SCHEMAS.title_case.prefix}${SCHEMAS.title_case.keys[key]}`;
+  }
+
+  if (isContactFormSchema(schemaOrPrefix)) {
+    const schema = SCHEMAS[schemaOrPrefix];
+    return `${schema.prefix}${schema.keys[key]}`;
+  }
+
+  // Backwards compatible path for callers that pass a raw prefix such as
+  // `contact_form_`. Snake-case prefixes compose with snake-case suffixes,
+  // while legacy display-name prefixes compose with Title Case suffixes.
+  return contactFormFieldName(schemaOrPrefix, key);
 }
 
 export function contactFormFromFields(
   fields: AirtableFields,
-  prefix: string = CONTACT_FORM_FIELD_PREFIX,
+  schemaOrPrefix: ContactFormSchema | string = 'title_case',
 ): ContactFormState {
   const empty = emptyContactFormState();
-  const k = (key: ContactFormFieldKey) => contactFormFieldName(prefix, key);
-  const layoutRaw = asString(fields[k('layout')]);
-  const themeRaw = asString(fields[k('theme')]);
+  const f = (k: ContactFormFieldKey) => fields[resolveContactFormFieldName(schemaOrPrefix, k)];
+  const layoutRaw = asString(f('layout'));
+  const themeRaw = asString(f('theme'));
   return {
-    eyebrow: asString(fields[k('eyebrow')]),
-    title: asString(fields[k('title')]),
-    subtitle: asString(fields[k('subtitle')]),
+    eyebrow: asString(f('eyebrow')),
+    title: asString(f('title')),
+    subtitle: asString(f('subtitle')),
     layout: (layoutRaw === 'centered' ? 'centered' : 'split') as ContactFormLayout,
     theme: (themeRaw === 'light' ? 'light' : 'dark') as ContactFormTheme,
-    showCompany: asBool(fields[k('showCompany')], empty.showCompany),
-    showPhone: asBool(fields[k('showPhone')], empty.showPhone),
-    showDropdown: asBool(fields[k('showDropdown')], empty.showDropdown),
-    dropdownLabel: asString(fields[k('dropdownLabel')]),
-    options: asString(fields[k('options')]),
-    ctaText: asString(fields[k('ctaText')]),
-    messageLabel: asString(fields[k('messageLabel')]),
-    trustSignals: asString(fields[k('trustSignals')]),
-    showContactPerson: asBool(fields[k('showContactPerson')], empty.showContactPerson),
+    showCompany: asBool(f('showCompany'), empty.showCompany),
+    showPhone: asBool(f('showPhone'), empty.showPhone),
+    showDropdown: asBool(f('showDropdown'), empty.showDropdown),
+    dropdownLabel: asString(f('dropdownLabel')),
+    options: asString(f('options')),
+    ctaText: asString(f('ctaText')),
+    messageLabel: asString(f('messageLabel')),
+    trustSignals: asString(f('trustSignals')),
+    showContactPerson: asBool(f('showContactPerson'), empty.showContactPerson),
   };
 }
 
 export interface ContactFormToFieldsOptions {
+  schema?: ContactFormSchema;
+  /** @deprecated Prefer `schema`; kept for raw-prefix callers during schema migration. */
   prefix?: string;
   /** Konvertera tomma textfält till `null` (Airtable-konvention som
    *  unique-page-mapper använder för att rensa fält). Booleans påverkas inte. */
@@ -92,10 +166,10 @@ export function contactFormToFields(
   state: ContactFormState,
   options: ContactFormToFieldsOptions = {},
 ): Record<string, unknown> {
-  const prefix = options.prefix ?? CONTACT_FORM_FIELD_PREFIX;
-  const k = (key: ContactFormFieldKey) => contactFormFieldName(prefix, key);
+  const schemaOrPrefix = options.prefix ?? options.schema ?? 'title_case';
   const text = (v: string): string | null =>
     options.nullForEmpty && v === '' ? null : v;
+  const k = (key: ContactFormFieldKey) => resolveContactFormFieldName(schemaOrPrefix, key);
   return {
     [k('eyebrow')]: text(state.eyebrow),
     [k('title')]: text(state.title),

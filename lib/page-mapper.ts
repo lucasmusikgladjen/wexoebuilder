@@ -227,7 +227,7 @@ export function pageStateFromRecords(args: {
  * Airtable till builder-state.
  */
 export function contactFormFromRecord(record: AirtableRecord): ContactFormState {
-  return contactFormFromFields(record.fields, 'contact_form_');
+  return contactFormFromFields(record.fields, 'snake_case');
 }
 
 /**
@@ -240,7 +240,7 @@ export function contactFormToFields(
 ): Record<string, unknown> {
   const fields = {
     show_contact_form: showContactForm,
-    ...sharedContactFormToFields(state, { prefix: 'contact_form_', nullForEmpty: true }),
+    ...sharedContactFormToFields(state, { schema: 'snake_case', nullForEmpty: true }),
   };
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
