@@ -18,26 +18,12 @@ import {
 } from './types';
 import { createEmptyTab, initialState } from './state';
 import { AirtableRecord } from './airtable';
-import { ContactFormState, ContactFormLayout, ContactFormTheme, emptyContactFormState } from './contact-form-types';
-
-type Fields = Record<string, unknown>;
-
-// ─── Helpers ───────────────────────────────────────────────────────────────
-
-function str(fields: Fields, key: string): string {
-  const v = fields[key];
-  return typeof v === 'string' ? v : '';
-}
-
-function bool(fields: Fields, key: string, fallback = false): boolean {
-  const v = fields[key];
-  return typeof v === 'boolean' ? v : fallback;
-}
-
-function num(fields: Fields, key: string, fallback = 0): number {
-  const v = fields[key];
-  return typeof v === 'number' ? v : fallback;
-}
+import { ContactFormState } from './contact-form-types';
+import { str, bool, num } from './airtable-helpers';
+import {
+  contactFormFromFields,
+  contactFormToFields as sharedContactFormToFields,
+} from './contact-form-mapper';
 
 // ─── Forward: PageState → Landing Pages fields ─────────────────────────────
 
@@ -235,58 +221,27 @@ export function pageStateFromRecords(args: {
 }
 
 /**
- * Generic helper: hämta ContactFormState från ett Airtable-record vars fält
- * följer `contact_form_*`-konventionen. Återanvänds från LP, PA, Audience.
+ * Hämta ContactFormState från ett Airtable-record vars fält följer
+ * `contact_form_*`-konventionen. Landing Page behåller Claude som
+ * backend-translator; den här helpern normaliserar bara reverse-load från
+ * Airtable till builder-state.
  */
 export function contactFormFromRecord(record: AirtableRecord): ContactFormState {
-  const f = record.fields;
-  const layoutRaw = str(f, 'contact_form_layout');
-  const themeRaw = str(f, 'contact_form_theme');
-  const empty = emptyContactFormState();
-  return {
-    eyebrow: str(f, 'contact_form_eyebrow'),
-    title: str(f, 'contact_form_title'),
-    subtitle: str(f, 'contact_form_subtitle'),
-    layout: (layoutRaw === 'centered' ? 'centered' : 'split') as ContactFormLayout,
-    theme: (themeRaw === 'light' ? 'light' : 'dark') as ContactFormTheme,
-    showCompany: bool(f, 'contact_form_show_company', empty.showCompany),
-    showPhone: bool(f, 'contact_form_show_phone', empty.showPhone),
-    showDropdown: bool(f, 'contact_form_show_dropdown', empty.showDropdown),
-    dropdownLabel: str(f, 'contact_form_dropdown_label'),
-    options: str(f, 'contact_form_options'),
-    ctaText: str(f, 'contact_form_cta_text'),
-    messageLabel: str(f, 'contact_form_message_label'),
-    trustSignals: str(f, 'contact_form_trust_signals'),
-    showContactPerson: bool(f, 'contact_form_show_contact_person', empty.showContactPerson),
-  };
+  return contactFormFromFields(record.fields, 'contact_form_');
 }
 
 /**
- * Generic helper: konvertera ContactFormState till Airtable-fält-map.
- * Återanvänds från publish-flödena för LP/PA/Audience.
+ * Konvertera ContactFormState till Airtable-fält-map för legacy-callers.
+ * Tomma textfält skrivs inte i create-payloaden, precis som tidigare.
  */
 export function contactFormToFields(
   showContactForm: boolean,
   state: ContactFormState,
 ): Record<string, unknown> {
-  const fields: Record<string, unknown> = {
-    'show_contact_form': showContactForm,
-    'contact_form_eyebrow': state.eyebrow || null,
-    'contact_form_title': state.title || null,
-    'contact_form_subtitle': state.subtitle || null,
-    'contact_form_layout': state.layout,
-    'contact_form_theme': state.theme,
-    'contact_form_show_company': state.showCompany,
-    'contact_form_show_phone': state.showPhone,
-    'contact_form_show_dropdown': state.showDropdown,
-    'contact_form_dropdown_label': state.dropdownLabel || null,
-    'contact_form_options': state.options || null,
-    'contact_form_cta_text': state.ctaText || null,
-    'contact_form_message_label': state.messageLabel || null,
-    'contact_form_trust_signals': state.trustSignals || null,
-    'contact_form_show_contact_person': state.showContactPerson,
+  const fields = {
+    show_contact_form: showContactForm,
+    ...sharedContactFormToFields(state, { prefix: 'contact_form_', nullForEmpty: true }),
   };
-  // Strip null så Airtable inte sätter explicit null.
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(fields)) {
     if (v !== null && v !== undefined) out[k] = v;

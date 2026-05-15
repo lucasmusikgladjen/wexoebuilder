@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @next/next/no-img-element */
+
 import { PageState } from '@/lib/types';
 import { renderInlineMarkdown } from '@/lib/markdown';
 

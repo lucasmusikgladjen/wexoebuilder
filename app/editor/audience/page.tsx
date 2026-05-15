@@ -10,6 +10,8 @@ export default function CreateAudiencePage() {
       uiDef={audienceUI}
       initialState={emptyAudienceState()}
       mode="create"
+      apiPath="/api/audience"
+      editPath="/editor/audience/:recordId"
     />
   );
 }

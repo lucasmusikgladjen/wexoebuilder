@@ -10,6 +10,8 @@ export default function CreateProductAreaPage() {
       uiDef={productAreaUI}
       initialState={emptyProductAreaState()}
       mode="create"
+      apiPath="/api/product-area"
+      editPath="/editor/product-area/:recordId"
     />
   );
 }

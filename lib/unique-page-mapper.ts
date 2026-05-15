@@ -1,6 +1,7 @@
 /**
  * Bidirektional mappning mellan Airtable cms_unique_pages-records och
- * UniquePageState i builder.
+ * UniquePageState i builder. Forward-mappern används som candidate-field
+ * schema till Claude-transformen; route-actions postar inte dessa fält direkt.
  *
  * Post-migration: snake_case överallt — Airtable display-namn matchar
  * passthrough mot wexoe-core domain-keys.

@@ -118,9 +118,14 @@ export const uniquePageUI: PageTypeUIDef<UniquePageState> & {
   id: 'unique-page',
   label: 'Egen sida',
   sections,
-  // UniquePagePreview tar bara state idag — activeSection/scrollTrigger
-  // är wired när data-section-ankaren plockas in i preview-komponenten.
-  previewLayout: ({ state }) => <UniquePagePreview state={state} />,
+  previewLayout: ({ state, activeSection, scrollTrigger, onSectionClick }) => (
+    <UniquePagePreview
+      state={state}
+      activeSection={activeSection}
+      scrollTrigger={scrollTrigger}
+      onSectionClick={onSectionClick}
+    />
+  ),
   slugInput: {
     accessor: (s) => s.slug,
     setter: (s, slug) => ({ ...s, slug }),

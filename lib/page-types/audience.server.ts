@@ -1,9 +1,9 @@
 /**
  * Audience — server-side sidtypsdefinition.
  *
- * Server-half:n innehåller mappers, validering och list-projektion. Ingen
- * React-kod här — får importeras från app/api/audience/route.ts och från
- * server-pages utan att dra in client-bundlen.
+ * Server-half:n innehåller loaders, validering och list-projektion. Skrivning
+ * sker via Claude-transformerade actions — användarstate postas aldrig direkt
+ * till Airtable.
  */
 
 import { AirtableRecord } from '../airtable';
@@ -11,11 +11,11 @@ import {
   AUDIENCE_TABLE_IDS,
   AUDIENCE_BASE_ID,
   audienceStateFromRecord,
-  audienceStateToFields,
 } from '../audience-mapper';
 import { loadAudienceState } from '../audience-loader';
 import { AudienceState, emptyAudienceState } from '../audience-types';
 import { AUDIENCE_ENTITIES } from '../wexoe-cache';
+import { audienceCreate, audienceUpdate } from './audience-actions';
 import type { PageTypeServerDef } from './types';
 
 export interface AudienceListItem {
@@ -32,7 +32,9 @@ export const audienceServer: PageTypeServerDef<AudienceState, AudienceListItem> 
   baseId: AUDIENCE_BASE_ID,
   emptyState: emptyAudienceState,
   fromRecord: audienceStateFromRecord,
-  stateToFields: audienceStateToFields,
+  // Skrivvägen går alltid via Claude (se audience-actions.ts).
+  create: audienceCreate,
+  update: audienceUpdate,
   validate: (s) => {
     if (!s.title?.trim()) return { field: 'title', message: 'Title är obligatoriskt.' };
     return null;

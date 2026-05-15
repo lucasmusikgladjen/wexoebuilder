@@ -1,7 +1,7 @@
 /**
  * Shared Claude-middleman transformation helper.
  *
- * Every page-save path (LP create/update, PA create/update) funnels user
+ * Every page-save path (LP, PA, Audience, Unique Page create/update) funnels user
  * state through this module. It builds a user-data JSON payload that
  * includes `_clientIndex` / `_recordId` back-end metadata, calls Claude
  * with the appropriate schema and mode-aware system prompt, retries once
@@ -18,6 +18,10 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { PageState } from './types';
 import { ProductAreaState } from './product-area-types';
+import { AudienceState } from './audience-types';
+import { audienceStateToFields } from './audience-mapper';
+import { UniquePageState } from './unique-page-types';
+import { uniquePageStateToFields } from './unique-page-mapper';
 
 // ─── Schemas loaded once at module boot ────────────────────────────────────
 const SCHEMA_LP = readFileSync(
@@ -606,6 +610,133 @@ export async function transformProductArea(
   }
 
   return parsed;
+}
+
+
+// ─── Simple single-record page transforms (Audience, Unique Page) ───────────
+
+export interface SingleRecordTransformResult {
+  fields: Record<string, unknown>;
+}
+
+function normalizeClaudeFields(
+  parsed: SingleRecordTransformResult,
+  allowedKeys: Set<string>,
+  pageLabel: string,
+): Record<string, unknown> {
+  if (!parsed || typeof parsed !== 'object' || !parsed.fields || typeof parsed.fields !== 'object') {
+    throw new Error(`Claude utelämnade fields-objektet för ${pageLabel}.`);
+  }
+
+  const out: Record<string, unknown> = {};
+  const unknownKeys: string[] = [];
+  for (const [key, value] of Object.entries(parsed.fields)) {
+    if (!allowedKeys.has(key)) {
+      unknownKeys.push(key);
+      continue;
+    }
+    if (value !== undefined) out[key] = value;
+  }
+  if (unknownKeys.length > 0) {
+    throw new Error(
+      `Claude returnerade okända Airtable-fält för ${pageLabel}: ${unknownKeys.join(', ')}.`,
+    );
+  }
+  return out;
+}
+
+function buildSingleRecordSystemPrompt(args: {
+  pageLabel: string;
+  mode: TransformMode;
+  allowedFields: readonly string[];
+  formattingRules: string;
+}): string {
+  const updateRule = args.mode === 'update'
+    ? '- I UPDATE måste du returnera ALLA fält från candidateFields så att rensade värden verkligen PATCHas till Airtable.'
+    : '- I CREATE får du utelämna tomma textfält/null-värden, men behåll booleans och fält med meningsfulla defaults.';
+
+  return `Du är ett strikt backend-mellanled mellan en mänsklig editor och Airtable.
+Din uppgift är att översätta användarvänlig builder-state till Airtable-ready fields för ${args.pageLabel}.
+
+VIKTIG PRINCIP:
+- Användardata får inte postas direkt till Airtable. Du är sista transformeringssteget.
+- Returnera ENBART valid JSON. Ingen markdown, ingen förklaring.
+- Output-formatet MÅSTE vara exakt: { "fields": { ... } }.
+- Du får ENDAST använda dessa Airtable-fältnamn:
+${args.allowedFields.map((field) => `  - ${field}`).join('\n')}
+${updateRule}
+- Bevara booleans som booleans, arrays som arrays och numbers som numbers.
+- Hitta inte på innehåll. Du får bara normalisera/strukturera/formattera användarens data.
+
+FORMATTERINGSREGLER:
+${args.formattingRules}`;
+}
+
+async function transformSingleRecordPage(args: {
+  apiKey: string;
+  pageLabel: string;
+  state: unknown;
+  candidateFields: Record<string, unknown>;
+  mode: TransformMode;
+  formattingRules: string;
+}): Promise<Record<string, unknown>> {
+  const allowedFields = Object.keys(args.candidateFields);
+  const systemPrompt = buildSingleRecordSystemPrompt({
+    pageLabel: args.pageLabel,
+    mode: args.mode,
+    allowedFields,
+    formattingRules: args.formattingRules,
+  });
+  const userPrompt = `Transformera denna builder-state till Airtable fields.\n\n${JSON.stringify({
+    mode: args.mode,
+    state: args.state,
+    candidateFields: args.candidateFields,
+  }, null, 2)}`;
+
+  const responseText = await callClaude(args.apiKey, systemPrompt, userPrompt);
+  const parsed = parseJsonOrThrow<SingleRecordTransformResult>(responseText);
+  return normalizeClaudeFields(parsed, new Set(allowedFields), args.pageLabel);
+}
+
+export async function transformAudiencePage(
+  apiKey: string,
+  state: AudienceState,
+  mode: TransformMode,
+): Promise<Record<string, unknown>> {
+  const candidateFields = audienceStateToFields(state, mode);
+  return transformSingleRecordPage({
+    apiKey,
+    pageLabel: 'Audience/Kundtyp-sida',
+    state,
+    candidateFields,
+    mode,
+    formattingRules: `
+- Audience-tabellen använder legacy PascalCase Airtable-fältnamn.
+- Contact Form-fälten heter "Contact Form ..." och ska alltid hållas konsekventa med input.
+- Stat Number ska vara number om användaren angett ett tal; annars null i update.
+- Rich text-fält (Description, Value Text 1/2, Benefit 1/2/3, Case Description/Result) får normaliseras varsamt men inte skrivas om innehållsmässigt.`,
+  });
+}
+
+export async function transformUniquePage(
+  apiKey: string,
+  state: UniquePageState,
+  mode: TransformMode,
+): Promise<Record<string, unknown>> {
+  const candidateFields = uniquePageStateToFields(state, mode);
+  return transformSingleRecordPage({
+    apiKey,
+    pageLabel: 'Unique Page/Egen sida',
+    state,
+    candidateFields,
+    mode,
+    formattingRules: `
+- cms_unique_pages använder snake_case Airtable-fältnamn.
+- FAQ är särskilt viktig: faq_items ska vara ett rich-long-text-fält där varje fråga/svar ligger på egen rad i formatet **Fråga** | Svar. Om state.faq.items redan följer formatet, bevara det. Om användaren skrivit enklare rad-/Q/A-format, normalisera till exakt detta format.
+- Text/rich-text-fält ska vara renderingsvänliga för Wexoe Core men inte få påhittat innehåll.
+- Linked record-arrayer (country_ids, division_ids) måste bevaras som array av Airtable record IDs.
+- Contact Form-fälten med prefix contact_form_ ska alltid hållas konsekventa med input.`,
+  });
 }
 
 // ─── Backend type-switch clearing helpers ──────────────────────────────────

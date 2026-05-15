@@ -31,23 +31,6 @@ import { ProductAreaState } from '../product-area-types';
 import { PA_ENTITIES } from '../wexoe-cache';
 import type { PageTypeServerDef } from './types';
 
-// stateToFields är obligatorisk i typen även om create/update overridar den.
-// Faktor:n anropar den aldrig när override:s är satta — men TS kräver att
-// fältet finns. En dedikerad throw klargör om någon framtida ändring råkar
-// kalla den.
-function unreachableStateToFields(): never {
-  throw new Error(
-    'product-area: stateToFields ska inte anropas (Lager 3 — create/update är override:de).',
-  );
-}
-
-// fromRecord och emptyState är optionella i typen och utelämnas eftersom
-// product-area inte använder factory:ns ?action=get-väg eller create-default-
-// flödet — server-pages hanterar båda direkt.
-function unreachableFromRecord(): never {
-  throw new Error('product-area: använd loadProductAreaState() istället för fromRecord.');
-}
-
 export const productAreaServer: PageTypeServerDef<ProductAreaState, ProductAreaListItem> = {
   id: 'product-area',
   label: 'Produktområde',
@@ -57,11 +40,6 @@ export const productAreaServer: PageTypeServerDef<ProductAreaState, ProductAreaL
   // Lager 3 — hela skriv-vägen är override:d.
   create: productAreaCreate,
   update: productAreaUpdate,
-
-  // Required-by-type-stubs (se kommentarer ovan).
-  emptyState: unreachableFromRecord,
-  fromRecord: unreachableFromRecord,
-  stateToFields: unreachableStateToFields,
 
   validate: (s) => {
     if (!s.h1?.trim()) return { field: 'h1', message: 'H1 är obligatoriskt.' };

@@ -30,6 +30,8 @@ export default async function EditUniquePage({
       initialState={state}
       mode="edit"
       recordId={recordId}
+      apiPath="/api/unique-page"
+      editPath="/editor/unique/:recordId"
     />
   );
 }

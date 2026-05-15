@@ -39,6 +39,8 @@ export default async function EditProductAreaPage({ params }: Props) {
       initialState={state}
       mode="edit"
       recordId={recordId}
+      apiPath="/api/product-area"
+      editPath="/editor/product-area/:recordId"
     />
   );
 }

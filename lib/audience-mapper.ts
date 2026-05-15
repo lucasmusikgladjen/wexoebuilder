@@ -1,7 +1,7 @@
 /**
  * Forward and reverse mapping between Airtable Audience Hero records and
- * AudienceState. Direct field-to-field mapping — no Claude transform
- * required because the schema is flat (no linked records).
+ * AudienceState. Forward-mappern används bara som candidate-field schema till
+ * Claude-transformen; route-actions postar inte dessa fält direkt till Airtable.
  */
 
 import { AirtableRecord, LEGACY_BASE_ID } from './airtable';
