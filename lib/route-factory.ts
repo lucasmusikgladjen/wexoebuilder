@@ -2,7 +2,7 @@
  * Route-factory för sidtypsspecifika CRUD-routes.
  *
  * Trelagsmodellen:
- *   Lager 1 — Standard CRUD för primary record.
+ *   Lager 1 — Standard CRUD för primary record (behålls som infrastruktur, men publika page-saves ska använda Claude-overrides).
  *   Lager 2 — Declarative relations (RelationDef) — ramverket diff:ar
  *             state mot Airtable och skapar/uppdaterar/raderar child-records.
  *   Lager 3 — Full override via `create` / `update` / `delete` hooks när

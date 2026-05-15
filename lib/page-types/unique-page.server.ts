@@ -1,19 +1,21 @@
 /**
  * Unique-page — server-side sidtypsdefinition.
  *
- * Ren Lager 1 — inga relations. Country/Division är linked-record-FÄLT
- * direkt på record:en (multipleRecordLinks som arrayer av IDs), inte
- * separata child-records. Field.LinkedRecords hanterar dem via /api/core.
+ * Country/Division är linked-record-FÄLT direkt på record:en
+ * (multipleRecordLinks som arrayer av IDs), inte separata child-records.
+ * Field.LinkedRecords hanterar dem via /api/core. Skrivvägen är Layer 3:
+ * Claude producerar Airtable-ready fields så rich long text-format (FAQ m.m.)
+ * aldrig behöver skrivas manuellt av användaren.
  */
 
 import { AirtableRecord, SSOT_BASE_ID } from '../airtable';
 import {
   UNIQUE_PAGES_TABLE_ID,
   uniquePageStateFromRecord,
-  uniquePageStateToFields,
 } from '../unique-page-mapper';
 import { UniquePageState, emptyUniquePageState } from '../unique-page-types';
 import { UNIQUE_PAGES_ENTITIES } from '../wexoe-cache';
+import { uniquePageCreate, uniquePageUpdate } from './unique-page-actions';
 import type { PageTypeServerDef } from './types';
 
 export interface UniquePageListItem {
@@ -32,7 +34,9 @@ export const uniquePageServer: PageTypeServerDef<UniquePageState, UniquePageList
   baseId: SSOT_BASE_ID,
   emptyState: emptyUniquePageState,
   fromRecord: uniquePageStateFromRecord,
-  stateToFields: uniquePageStateToFields,
+  // Skrivvägen går alltid via Claude (se unique-page-actions.ts).
+  create: uniquePageCreate,
+  update: uniquePageUpdate,
   validate: (s) => {
     if (!s.h1?.trim()) return { field: 'h1', message: 'H1 är obligatorisk.' };
     return null;

@@ -28,7 +28,7 @@
  * ───────────────────────────────────────────────────────────────────────
  *
  *   Lager 1 — Standard CRUD: bara `primary` (tableId + fromRecord + toFields).
- *     Används av: audience, unique-page, basic cases/news/leverantörer.
+ *     Direkt stateToFields-skrivning ska bara användas för interna/systemiska fält. Publika page-save-vägar i den här appen använder Claude-overrides innan Airtable skrivs.
  *
  *   Lager 2 — Declarative relations: `primary` + `relations[]`. Ramverket
  *     hanterar diff (skapa/uppdatera/ta bort eller unlink) per relation.
