@@ -27,29 +27,57 @@ import {
 
 export const CONTACT_FORM_FIELD_PREFIX = 'Contact Form ';
 
+const CONTACT_FORM_FIELD_NAMES = {
+  eyebrow: { title: 'Eyebrow', snake: 'eyebrow' },
+  title: { title: 'Title', snake: 'title' },
+  subtitle: { title: 'Subtitle', snake: 'subtitle' },
+  layout: { title: 'Layout', snake: 'layout' },
+  theme: { title: 'Theme', snake: 'theme' },
+  showCompany: { title: 'Show Company', snake: 'show_company' },
+  showPhone: { title: 'Show Phone', snake: 'show_phone' },
+  showDropdown: { title: 'Show Dropdown', snake: 'show_dropdown' },
+  dropdownLabel: { title: 'Dropdown Label', snake: 'dropdown_label' },
+  options: { title: 'Options', snake: 'options' },
+  ctaText: { title: 'CTA Text', snake: 'cta_text' },
+  messageLabel: { title: 'Message Label', snake: 'message_label' },
+  trustSignals: { title: 'Trust Signals', snake: 'trust_signals' },
+  showContactPerson: { title: 'Show Contact Person', snake: 'show_contact_person' },
+} as const;
+
+type ContactFormFieldKey = keyof typeof CONTACT_FORM_FIELD_NAMES;
+
+function contactFormFieldName(prefix: string, key: ContactFormFieldKey): string {
+  const names = CONTACT_FORM_FIELD_NAMES[key];
+  // Snake-case prefixes (`contact_form_`) compose with snake suffixes, while
+  // legacy Airtable display-name prefixes (`Contact Form `) compose with
+  // Title Case suffixes. This keeps old Audience/PA fields and newer
+  // landing/unique snake_case fields both working through the shared mapper.
+  return `${prefix}${prefix.endsWith('_') ? names.snake : names.title}`;
+}
+
 export function contactFormFromFields(
   fields: AirtableFields,
   prefix: string = CONTACT_FORM_FIELD_PREFIX,
 ): ContactFormState {
   const empty = emptyContactFormState();
-  const k = (key: string) => `${prefix}${key}`;
-  const layoutRaw = asString(fields[k('Layout')]);
-  const themeRaw = asString(fields[k('Theme')]);
+  const k = (key: ContactFormFieldKey) => contactFormFieldName(prefix, key);
+  const layoutRaw = asString(fields[k('layout')]);
+  const themeRaw = asString(fields[k('theme')]);
   return {
-    eyebrow: asString(fields[k('Eyebrow')]),
-    title: asString(fields[k('Title')]),
-    subtitle: asString(fields[k('Subtitle')]),
+    eyebrow: asString(fields[k('eyebrow')]),
+    title: asString(fields[k('title')]),
+    subtitle: asString(fields[k('subtitle')]),
     layout: (layoutRaw === 'centered' ? 'centered' : 'split') as ContactFormLayout,
     theme: (themeRaw === 'light' ? 'light' : 'dark') as ContactFormTheme,
-    showCompany: asBool(fields[k('Show Company')], empty.showCompany),
-    showPhone: asBool(fields[k('Show Phone')], empty.showPhone),
-    showDropdown: asBool(fields[k('Show Dropdown')], empty.showDropdown),
-    dropdownLabel: asString(fields[k('Dropdown Label')]),
-    options: asString(fields[k('Options')]),
-    ctaText: asString(fields[k('CTA Text')]),
-    messageLabel: asString(fields[k('Message Label')]),
-    trustSignals: asString(fields[k('Trust Signals')]),
-    showContactPerson: asBool(fields[k('Show Contact Person')], empty.showContactPerson),
+    showCompany: asBool(fields[k('showCompany')], empty.showCompany),
+    showPhone: asBool(fields[k('showPhone')], empty.showPhone),
+    showDropdown: asBool(fields[k('showDropdown')], empty.showDropdown),
+    dropdownLabel: asString(fields[k('dropdownLabel')]),
+    options: asString(fields[k('options')]),
+    ctaText: asString(fields[k('ctaText')]),
+    messageLabel: asString(fields[k('messageLabel')]),
+    trustSignals: asString(fields[k('trustSignals')]),
+    showContactPerson: asBool(fields[k('showContactPerson')], empty.showContactPerson),
   };
 }
 
@@ -65,23 +93,23 @@ export function contactFormToFields(
   options: ContactFormToFieldsOptions = {},
 ): Record<string, unknown> {
   const prefix = options.prefix ?? CONTACT_FORM_FIELD_PREFIX;
-  const k = (key: string) => `${prefix}${key}`;
+  const k = (key: ContactFormFieldKey) => contactFormFieldName(prefix, key);
   const text = (v: string): string | null =>
     options.nullForEmpty && v === '' ? null : v;
   return {
-    [k('Eyebrow')]: text(state.eyebrow),
-    [k('Title')]: text(state.title),
-    [k('Subtitle')]: text(state.subtitle),
-    [k('Layout')]: state.layout,
-    [k('Theme')]: state.theme,
-    [k('Show Company')]: state.showCompany,
-    [k('Show Phone')]: state.showPhone,
-    [k('Show Dropdown')]: state.showDropdown,
-    [k('Dropdown Label')]: text(state.dropdownLabel),
-    [k('Options')]: text(state.options),
-    [k('CTA Text')]: text(state.ctaText),
-    [k('Message Label')]: text(state.messageLabel),
-    [k('Trust Signals')]: text(state.trustSignals),
-    [k('Show Contact Person')]: state.showContactPerson,
+    [k('eyebrow')]: text(state.eyebrow),
+    [k('title')]: text(state.title),
+    [k('subtitle')]: text(state.subtitle),
+    [k('layout')]: state.layout,
+    [k('theme')]: state.theme,
+    [k('showCompany')]: state.showCompany,
+    [k('showPhone')]: state.showPhone,
+    [k('showDropdown')]: state.showDropdown,
+    [k('dropdownLabel')]: text(state.dropdownLabel),
+    [k('options')]: text(state.options),
+    [k('ctaText')]: text(state.ctaText),
+    [k('messageLabel')]: text(state.messageLabel),
+    [k('trustSignals')]: text(state.trustSignals),
+    [k('showContactPerson')]: state.showContactPerson,
   };
 }
