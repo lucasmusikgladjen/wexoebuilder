@@ -17,7 +17,8 @@ import {
   clearsForSidebarType,
   LpTransformDownload,
 } from '@/lib/claude-transform';
-import { invalidateWexoeCoreCache, LP_ENTITIES } from '@/lib/wexoe-cache';
+import { invalidateWexoeCoreCache } from '@/lib/wexoe-cache';
+import { getPageType } from '@/lib/page-types/registry';
 
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
@@ -202,7 +203,7 @@ async function createNewPage(
   // entities so editors see the new page on the live site immediately.
   // Awaited intentionally — Vercel can spin the lambda down before a
   // dangling promise resolves, so we'd rather pay the ~hundreds-of-ms.
-  await invalidateWexoeCoreCache(LP_ENTITIES, 'publish:create');
+  await invalidateWexoeCoreCache(getPageType('landing').cacheEntities, 'publish:create');
 
   return NextResponse.json({
     success: true,
@@ -424,7 +425,7 @@ async function updateExistingPage(
 
   // Cache-bust Wexoe Core after a successful update so changes show up
   // straight away on the live site instead of waiting for the 24h TTL.
-  await invalidateWexoeCoreCache(LP_ENTITIES, 'publish:update');
+  await invalidateWexoeCoreCache(getPageType('landing').cacheEntities, 'publish:update');
 
   return NextResponse.json({
     success: true,

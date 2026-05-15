@@ -27,8 +27,8 @@
 import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import BuilderShell from '@/components/BuilderShell';
-import EditorSection from '@/components/editors/EditorSection';
-import { SaveButton, SaveStatus } from './';
+import SectionEditor from '@/components/shared/SectionEditor';
+import { ErrorToast, SaveBar, UnsavedChangesGuard } from './';
 import type {
   PageTypeUIDef,
   SectionDef,
@@ -47,6 +47,10 @@ export interface PageTypeBuilderProps<TState> {
   mode: 'create' | 'edit';
   /** Befintligt Airtable record-ID — krävs om mode === 'edit'. */
   recordId?: string;
+  /** API endpoint för sidtypen. Default: `/api/${uiDef.id}`. */
+  apiPath?: string;
+  /** Edit-path-template efter create. Använd `:recordId`, t.ex. `/editor/unique/:recordId`. */
+  editPath?: string;
   /**
    * Hook som körs efter lyckad save. Tar emot save-resultet (inkl.
    * `relations` om sidtypen har sådana) och nuvarande state, returnerar
@@ -75,6 +79,8 @@ export default function PageTypeBuilder<TState>({
   initialState,
   mode,
   recordId,
+  apiPath,
+  editPath,
   onSaved,
 }: PageTypeBuilderProps<TState>) {
   const router = useRouter();
@@ -86,6 +92,7 @@ export default function PageTypeBuilder<TState>({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   const isCreate = mode === 'create';
   const canSave = uiDef.canSave ? uiDef.canSave(state) : true;
@@ -93,6 +100,7 @@ export default function PageTypeBuilder<TState>({
   const update = useCallback((next: TState) => {
     setState(next);
     setJustSaved(false);
+    setDirty(true);
   }, []);
 
   const handleSectionFocus = useCallback((id: string) => {
@@ -105,7 +113,8 @@ export default function PageTypeBuilder<TState>({
     setSaving(true);
     setError(null);
 
-    const url = isCreate ? `/api/${uiDef.id}` : `/api/${uiDef.id}?id=${recordId}`;
+    const baseApiPath = apiPath ?? `/api/${uiDef.id}`;
+    const url = isCreate ? baseApiPath : `${baseApiPath}?id=${recordId}`;
     const method = isCreate ? 'POST' : 'PATCH';
 
     try {
@@ -123,7 +132,12 @@ export default function PageTypeBuilder<TState>({
         // Redirecta så URL:en matchar den nya record:en. State hydreras om
         // från servern via fromRecord på edit-routen — inga relations-IDs
         // behöver smyga in på state här.
-        router.replace(`/editor/${uiDef.id}/${data.recordId}`);
+        setDirty(false);
+        router.replace(
+          editPath
+            ? editPath.replace(':recordId', encodeURIComponent(data.recordId))
+            : `/editor/${uiDef.id}/${data.recordId}`,
+        );
         return;
       }
 
@@ -137,6 +151,7 @@ export default function PageTypeBuilder<TState>({
         : undefined;
       if (next !== undefined) setState(next);
       setJustSaved(true);
+      setDirty(false);
       if (!onSaved) router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Sparning misslyckades.');
@@ -178,53 +193,58 @@ export default function PageTypeBuilder<TState>({
     </div>
   ) : undefined;
 
-  const toolbarMiddle = (
-    <SaveStatus
+  const toolbarRight = (
+    <SaveBar
+      onSave={handleSave}
+      saving={saving}
+      canSave={canSave}
+      isCreate={isCreate}
       error={error}
       justSaved={justSaved}
       hint={uiDef.canSaveHint}
-      canSave={canSave}
+      dirty={dirty}
     />
-  );
-
-  const toolbarRight = (
-    <SaveButton onClick={handleSave} saving={saving} canSave={canSave} isCreate={isCreate} />
   );
 
   const PreviewLayout = uiDef.previewLayout;
 
   return (
-    <BuilderShell
-      toolbar={{ left: toolbarLeft, middle: toolbarMiddle, right: toolbarRight }}
-      quickNav={quickNav}
-      activeSection={activeSection}
-      onActiveSectionChange={(id) => setActiveSection(id)}
-      previewPanel={
-        <PreviewLayout
-          state={state}
-          activeSection={activeSection}
-          scrollTrigger={scrollTrigger}
-          onSectionClick={(id) => setActiveSection(id)}
-        />
-      }
-      editorSections={({ sectionRef, onSectionFocus }) =>
-        uiDef.sections.map((section) => (
-          <SectionWrapper
-            key={section.id}
-            section={section}
+    <>
+      <UnsavedChangesGuard active={dirty && !saving} />
+      <ErrorToast message={error} onClose={() => setError(null)} />
+      <BuilderShell
+        toolbar={{ left: toolbarLeft, right: toolbarRight }}
+        quickNav={quickNav}
+        activeSection={activeSection}
+        onActiveSectionChange={(id) => setActiveSection(id)}
+        previewPanel={
+          <PreviewLayout
             state={state}
-            setState={update}
-            sectionRef={sectionRef(section.id)}
-            onFocus={() => {
-              onSectionFocus(section.id);
-              handleSectionFocus(section.id);
-            }}
+            activeSection={activeSection}
+            scrollTrigger={scrollTrigger}
+            onSectionClick={(id) => setActiveSection(id)}
           />
-        ))
-      }
-    />
+        }
+        editorSections={({ sectionRef, onSectionFocus }) =>
+          uiDef.sections.map((section) => (
+            <SectionWrapper
+              key={section.id}
+              section={section}
+              state={state}
+              setState={update}
+              sectionRef={sectionRef(section.id)}
+              onFocus={() => {
+                onSectionFocus(section.id);
+                handleSectionFocus(section.id);
+              }}
+            />
+          ))
+        }
+      />
+    </>
   );
 }
+
 
 // ─── Per-section wrapper ───────────────────────────────────────────────────
 
@@ -254,15 +274,16 @@ function SectionWrapper<TState>({
       onClick={onFocus}
       onFocusCapture={onFocus}
     >
-      <EditorSection
+      <SectionEditor
+        id={section.id}
         title={section.label}
-        visible={toggle?.value}
-        onToggleVisible={toggle?.onChange}
+        description={section.description}
+        visibilityToggle={toggle}
         defaultOpen={!section.defaultCollapsed}
+        filledIndicator={section.isFilled ? section.isFilled(state) : undefined}
       >
         <Editor state={state} onChange={setState} />
-      </EditorSection>
+      </SectionEditor>
     </div>
   );
 }
-

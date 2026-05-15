@@ -78,16 +78,17 @@ export interface PageTypeServerDef<TState, TListItem = unknown> {
   /** Vilken Airtable-bas. Default är SSOT-basen om utelämnad. */
   baseId?: string;
 
-  /** Tom state-skapelse — används vid create-flödet. */
-  emptyState: () => TState;
+  /** Tom state-skapelse — används vid standard-create-flödet. Layer 3-sidtyper kan utelämna. */
+  emptyState?: () => TState;
 
   /** Airtable record → state. Server-side, körs i route handler eller
-   *  server component. */
-  fromRecord: (record: AirtableRecord) => TState;
+   *  server component. Layer 3-sidtyper med egen loader kan utelämna. */
+  fromRecord?: (record: AirtableRecord) => TState;
 
   /** State → Airtable-fält. Mode-aware så create kan utelämna tomma
-   *  fält och update kan skriva tomsträng/null för att rensa. */
-  stateToFields: (state: TState, mode: 'create' | 'update') => AirtableFields;
+   *  fält och update kan skriva tomsträng/null för att rensa. Krävs bara
+   *  för standard CRUD; Layer 3 med create/update overrides kan utelämna. */
+  stateToFields?: (state: TState, mode: 'create' | 'update') => AirtableFields;
 
   /** Returnerar felmeddelande eller null. Körs på server före skrivning. */
   validate?: (state: TState) => ValidationIssue | null;

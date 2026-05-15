@@ -23,7 +23,10 @@ export default function EditorPanel({ state, dispatch, activeSection, onSectionC
   const scrollDetectedRef = useRef(false);
   const isProgrammaticScroll = useRef(false);
   const activeSectionRef = useRef(activeSection);
-  activeSectionRef.current = activeSection;
+
+  useEffect(() => {
+    activeSectionRef.current = activeSection;
+  }, [activeSection]);
 
   // Auto-scroll editor to active section (skip when triggered by scroll detection)
   useEffect(() => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { CoreEntityName } from '@/lib/core/registry';
 import { CORE_ENTITY_FORMS, FormField } from '@/lib/core/forms';
 

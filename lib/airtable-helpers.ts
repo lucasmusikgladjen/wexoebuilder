@@ -55,6 +55,10 @@ export function num(fields: AirtableFields, key: string, fallback = 0): number {
   return asNumber(fields[key], fallback);
 }
 
+export function strArray(fields: AirtableFields, key: string): string[] {
+  return asLinkIds(fields[key]);
+}
+
 export function linkedIds(fields: AirtableFields, key: string): string[] {
   return asLinkIds(fields[key]);
 }

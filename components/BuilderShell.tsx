@@ -62,7 +62,10 @@ export default function BuilderShell({
   const scrollDetectedRef = useRef(false);
   const isProgrammaticScroll = useRef(false);
   const activeSectionRef = useRef(activeSection);
-  activeSectionRef.current = activeSection;
+
+  useEffect(() => {
+    activeSectionRef.current = activeSection;
+  }, [activeSection]);
   const [internalScrollTrigger, setInternalScrollTrigger] = useState(0);
 
   // Programmatic scroll-into-view on activeSection change (unless caused by a scroll event).

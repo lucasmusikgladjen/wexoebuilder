@@ -39,6 +39,8 @@ export default async function EditAudiencePage({ params }: Props) {
       initialState={state}
       mode="edit"
       recordId={recordId}
+      apiPath="/api/audience"
+      editPath="/editor/audience/:recordId"
     />
   );
 }

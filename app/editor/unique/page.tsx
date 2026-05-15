@@ -10,6 +10,8 @@ export default function CreateUniquePage() {
       uiDef={uniquePageUI}
       initialState={emptyUniquePageState()}
       mode="create"
+      apiPath="/api/unique-page"
+      editPath="/editor/unique/:recordId"
     />
   );
 }

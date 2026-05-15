@@ -112,16 +112,17 @@ export default function PageManager() {
     });
   }, [pages, query, activeType, divisionFilter, countryFilter]);
 
-  const counts = {
-    all: pages?.length ?? 0,
-    landing: pages?.filter((p) => p.type === 'landing').length ?? 0,
-    product: pages?.filter((p) => p.type === 'product').length ?? 0,
-    audience: pages?.filter((p) => p.type === 'audience').length ?? 0,
-    unique: pages?.filter((p) => p.type === 'unique').length ?? 0,
-  };
+  const counts = useMemo(() => {
+    const byType = Object.fromEntries(
+      PAGE_TYPES.map((type) => [
+        type.id,
+        pages?.filter((page) => page.type === type.id).length ?? 0,
+      ]),
+    ) as Record<PageType, number>;
+    return { all: pages?.length ?? 0, byType };
+  }, [pages]);
 
-  const editPathFor = (page: PageRow) =>
-    PAGE_TYPES.find((t) => t.id === page.type)?.editPath(page.id) ?? '#';
+  const editPathFor = (page: PageRow) => getPageType(page.type).editPath(page.id);
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: 'var(--font-dm-sans)' }}>
@@ -181,7 +182,7 @@ export default function PageManager() {
                   : 'text-gray-400 hover:text-gray-600'
               }`}
             >
-              {t.label} <span className="text-gray-300 ml-1">{counts[t.id]}</span>
+              {t.label} <span className="text-gray-300 ml-1">{counts.byType[t.id]}</span>
             </button>
           ))}
         </div>
@@ -288,15 +289,7 @@ export default function PageManager() {
         <AddPageDialog
           onClose={() => setShowAddDialog(false)}
           onSelect={(type) => {
-            if (type === 'landing') {
-              router.push('/editor');
-            } else if (type === 'product') {
-              router.push('/editor/product-area');
-            } else if (type === 'audience') {
-              router.push('/editor/audience');
-            } else if (type === 'unique') {
-              router.push('/editor/unique');
-            }
+            router.push(getPageType(type).createPath);
           }}
         />
       )}
@@ -478,12 +471,7 @@ function AddPageDialog({
   onClose: () => void;
   onSelect: (type: PageType) => void;
 }) {
-  const creatableTypes: Array<{ id: PageType; label: string; description: string }> = [
-    { id: 'landing', label: 'Landing page', description: 'Kampanj- och konverteringssida' },
-    { id: 'product', label: 'Produktsida', description: 'Produktområdesida med produkter och lösningar' },
-    { id: 'audience', label: 'Kundtyp-sida', description: 'Kundtyp hero + värdeproposition' },
-    { id: 'unique', label: 'Egen sida', description: 'Tier 2-sida (om-oss, karriär osv.) med fast sektion-struktur' },
-  ];
+  const creatableTypes = PAGE_TYPES.filter((type) => type.creatable);
 
   return (
     <div
