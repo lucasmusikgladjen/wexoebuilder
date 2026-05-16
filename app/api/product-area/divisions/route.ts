@@ -1,13 +1,9 @@
 /**
- * Legacy product-area divisions list.
+ * Product-area divisions list.
  *
- * Product-area-records lever fortfarande i legacy-basen, så Division-länken
- * pekar på legacy-basens divisions-tabell. SSOT:s `core_divisions` är en
- * separat tabell i Wexoe NY och är inte direkt utbytbar.
- *
- * Den här endpointen serverar legacy-divisions så SettingsEditor kan
- * dropdown:a dem client-side när PageTypeBuilder driver builder:n.
- * Tas bort när product-area-familjen migreras till SSOT.
+ * Product Area är migrerad till Wexoe NY och `PA_TABLE_IDS.divisions` pekar
+ * på `core_divisions`. Endpointen finns kvar som tunn klientvänlig wrapper
+ * runt loadDivisions() för SettingsEditor.
  */
 
 import { NextResponse } from 'next/server';

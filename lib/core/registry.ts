@@ -9,6 +9,8 @@
  *   - `wexoeplugins/wexoe-core/src/EntityRestApi.php::CORE_EDITABLE_ENTITIES`
  */
 
+import { CORE_TABLE_IDS } from '../airtable-registry';
+
 export type CoreEntityRole = 'singleton' | 'taxonomy' | 'collection';
 
 export interface CoreEntityDef {
@@ -24,7 +26,7 @@ export interface CoreEntityDef {
 
 export const CORE_ENTITIES = {
   core_company: {
-    tableId: 'tblwq9y74ertsNyYG',
+    tableId: CORE_TABLE_IDS.coreCompany,
     role: 'singleton',
     label: 'Företag',
     description: 'Företagsinformation. Visas i headers, footers och mail-signaturer.',
@@ -32,49 +34,49 @@ export const CORE_ENTITIES = {
     singleRecord: true,
   },
   core_graphic_profile: {
-    tableId: 'tbl4c4HjiKVCcJI5v',
+    tableId: CORE_TABLE_IDS.coreGraphicProfile,
     role: 'singleton',
     label: 'Grafisk profil',
     description: 'Färger, loggor och typsnitt. Sätt Is Default på default-profilen.',
     primaryKey: 'slug',
   },
   core_countries: {
-    tableId: 'tblCZ082jWGUBrUAK',
+    tableId: CORE_TABLE_IDS.coreCountries,
     role: 'taxonomy',
     label: 'Länder',
     description: 'De marknader Wexoe är aktivt på.',
     primaryKey: 'code',
   },
   core_divisions: {
-    tableId: 'tblyxs2zsoRBozxQS',
+    tableId: CORE_TABLE_IDS.coreDivisions,
     role: 'taxonomy',
     label: 'Divisioner',
     description: 'Interna affärsindelningar (Industri, Automation, Kassasystem).',
     primaryKey: 'slug',
   },
   core_customer_types: {
-    tableId: 'tblLsYRMZz6JA6GBK',
+    tableId: CORE_TABLE_IDS.coreCustomerTypes,
     role: 'taxonomy',
     label: 'Kundtyper',
     description: 'Kundsegment (Industri, Bygg, Offentlig sektor).',
     primaryKey: 'slug',
   },
   core_coworkers: {
-    tableId: 'tblYwMQlW9HFd41pg',
+    tableId: CORE_TABLE_IDS.coreCoworkers,
     role: 'collection',
     label: 'Medarbetare',
     description: 'Säljare, tekniker, övriga som ska visas på publika sidor.',
     primaryKey: 'full_name',
   },
   core_partners: {
-    tableId: 'tblZ5YIYFelxA0nBm',
+    tableId: CORE_TABLE_IDS.corePartners,
     role: 'collection',
     label: 'Partners',
     description: 'Samarbetspartners (tillverkare, distributörer, certifieringsorgan).',
     primaryKey: 'name',
   },
   core_testimonials: {
-    tableId: 'tbl1pe0bWz5zdkqJF',
+    tableId: CORE_TABLE_IDS.coreTestimonials,
     role: 'collection',
     label: 'Citat',
     description: 'Kundreferenser med scope per customer type / division / country.',

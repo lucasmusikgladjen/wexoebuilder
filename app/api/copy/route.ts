@@ -5,7 +5,7 @@ import {
   createRecord,
   AirtableRecord,
 } from '@/lib/airtable';
-import { TABLE_IDS as LP_TABLE_IDS } from '@/lib/airtable';
+import { AIRTABLE_FAMILIES } from '@/lib/airtable-registry';
 import { PA_TABLE_IDS, PA_BASE_ID } from '@/lib/product-area-mapper';
 import {
   CUSTOMER_TYPE_TABLE_IDS,
@@ -14,13 +14,13 @@ import {
 import { invalidateWexoeCoreCache, CUSTOMER_TYPE_PAGE_ENTITIES } from '@/lib/wexoe-cache';
 
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+const LANDING_TABLE_IDS = AIRTABLE_FAMILIES.landing.tables;
 
 // Fields we never want to write back as-is — these are linked-record fields
 // that point at the source record's owned children. The copy will re-link
 // to its own freshly-created children instead.
 //
 // LP, PA och customer-type-pages är migrerade till Wexoe NY med snake_case-keys.
-// use legacy PascalCase keys until those tables migrate.
 const LP_FIELDS_TO_DROP = new Set(['tab_ids']);
 const TAB_FIELDS_TO_DROP = new Set(['landing_page_ids', 'download_ids']);
 const DOWNLOAD_FIELDS_TO_DROP = new Set(['tab_ids']);
@@ -58,8 +58,7 @@ function defaultCopyName(name: string): string {
   return `${name} COPY`;
 }
 
-/** Slug uniqueness check. `slugField` differs by family: LP/PA use the
- *  primary `slug` (snake_case in NY base, PascalCase `Slug` in legacy). */
+/** Slug uniqueness check. All migrated page families use snake_case `slug`. */
 async function isSlugTaken(
   apiKey: string,
   tableId: string,
@@ -78,8 +77,7 @@ async function isSlugTaken(
 
 // ─── Landing Page (deep copy: LP + tabs + downloads) ───────────────────────
 //
-// LP family now lives in Wexoe NY with snake_case fields. Default base from
-// `lib/airtable.ts` already points there — no explicit baseId needed.
+// LP family lives in Wexoe NY with snake_case fields.
 
 async function copyLandingPage(
   apiKey: string,
@@ -87,7 +85,7 @@ async function copyLandingPage(
   name: string | undefined,
   slug: string | undefined,
 ) {
-  const source = await getRecord(apiKey, LP_TABLE_IDS.landingPages, sourceId);
+  const source = await getRecord(apiKey, LANDING_TABLE_IDS.landingPages, sourceId);
   const sourceSlug = (source.fields.slug as string) || '';
 
   // LP records dropped the standalone Name field — fall back to slug for
@@ -95,7 +93,7 @@ async function copyLandingPage(
   const newName = name?.trim() || defaultCopyName(sourceSlug);
   const newSlug = slug?.trim() || defaultCopySlug(sourceSlug);
 
-  if (await isSlugTaken(apiKey, LP_TABLE_IDS.landingPages, newSlug, 'slug')) {
+  if (await isSlugTaken(apiKey, LANDING_TABLE_IDS.landingPages, newSlug, 'slug')) {
     return NextResponse.json(
       { error: `Slug "${newSlug}" finns redan. Välj ett annat.` },
       { status: 409 },
@@ -107,14 +105,14 @@ async function copyLandingPage(
   const lpFields = strip(source.fields, LP_FIELDS_TO_DROP);
   lpFields.slug = newSlug;
 
-  const newLp = await createRecord(apiKey, LP_TABLE_IDS.landingPages, lpFields);
+  const newLp = await createRecord(apiKey, LANDING_TABLE_IDS.landingPages, lpFields);
 
   // 2. Read all source tabs and downloads in two queries.
   const tabIds = (source.fields['tab_ids'] as string[] | undefined) ?? [];
   let sourceTabs: AirtableRecord[] = [];
   if (tabIds.length > 0) {
     const formula = `OR(${tabIds.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
-    sourceTabs = await listRecords(apiKey, LP_TABLE_IDS.landingPageTabs, { filterByFormula: formula });
+    sourceTabs = await listRecords(apiKey, LANDING_TABLE_IDS.landingPageTabs, { filterByFormula: formula });
   }
 
   // Sort by order so creation order matches what the live page shows.
@@ -132,7 +130,7 @@ async function copyLandingPage(
   let sourceDownloads: AirtableRecord[] = [];
   if (downloadIds.size > 0) {
     const formula = `OR(${[...downloadIds].map((id) => `RECORD_ID()='${id}'`).join(',')})`;
-    sourceDownloads = await listRecords(apiKey, LP_TABLE_IDS.landingPageDownloads, { filterByFormula: formula });
+    sourceDownloads = await listRecords(apiKey, LANDING_TABLE_IDS.landingPageDownloads, { filterByFormula: formula });
   }
 
   // 3. CREATE new tabs linked to the new LP. Map oldTabId → newTabId so we
@@ -141,7 +139,7 @@ async function copyLandingPage(
   for (const sourceTab of sourceTabs) {
     const tabFields = strip(sourceTab.fields, TAB_FIELDS_TO_DROP);
     tabFields['landing_page_ids'] = [newLp.id];
-    const newTab = await createRecord(apiKey, LP_TABLE_IDS.landingPageTabs, tabFields);
+    const newTab = await createRecord(apiKey, LANDING_TABLE_IDS.landingPageTabs, tabFields);
     tabIdMap[sourceTab.id] = newTab.id;
   }
 
@@ -155,7 +153,7 @@ async function copyLandingPage(
 
     const dlFields = strip(sourceDl.fields, DOWNLOAD_FIELDS_TO_DROP);
     dlFields.tab_ids = newTabRefs;
-    await createRecord(apiKey, LP_TABLE_IDS.landingPageDownloads, dlFields);
+    await createRecord(apiKey, LANDING_TABLE_IDS.landingPageDownloads, dlFields);
   }
 
   return NextResponse.json({
@@ -169,9 +167,11 @@ async function copyLandingPage(
   });
 }
 
-// ─── Product Area (shallow copy — share linked Products/Solutions) ─────────
+// ─── Product Area (copy owned sections, share Products/Solutions) ─────────
 //
-// Still on legacy Wexoe base — pass PA_BASE_ID explicitly to all helpers.
+// PA family lives in Wexoe NY with snake_case fields. Product/Solution links
+// are shared references; cms_product_page_sections are owned content records
+// and are copied so edits on the duplicate do not mutate the source page.
 
 async function copyProductArea(
   apiKey: string,
@@ -180,26 +180,45 @@ async function copyProductArea(
   slug: string | undefined,
 ) {
   const source = await getRecord(apiKey, PA_TABLE_IDS.productAreas, sourceId, PA_BASE_ID);
-  const sourceName = (source.fields.Name as string) || '';
-  const sourceSlug = (source.fields.Slug as string) || '';
+  const sourceName = (source.fields.name as string) || '';
+  const sourceSlug = (source.fields.slug as string) || '';
 
   const newName = name?.trim() || defaultCopyName(sourceName);
   const newSlug = slug?.trim() || defaultCopySlug(sourceSlug);
 
-  if (await isSlugTaken(apiKey, PA_TABLE_IDS.productAreas, newSlug, 'Slug', PA_BASE_ID)) {
+  if (await isSlugTaken(apiKey, PA_TABLE_IDS.productAreas, newSlug, 'slug', PA_BASE_ID)) {
     return NextResponse.json(
       { error: `Slug "${newSlug}" finns redan. Välj ett annat.` },
       { status: 409 },
     );
   }
 
-  // PA copy is shallow: linked Products and Solutions are *shared* with
-  // the original. Editing one product still affects both pages — that's the
-  // expected behaviour for v1, since linked records in Airtable are always
-  // shared by reference.
+  const sectionIds = (source.fields.section_ids as string[] | undefined) ?? [];
+  const newSectionIds: string[] = [];
+  if (sectionIds.length > 0) {
+    const formula = `OR(${sectionIds.map((id) => `RECORD_ID()='${id}'`).join(',')})`;
+    const sections = await listRecords(apiKey, PA_TABLE_IDS.productPageSections, {
+      filterByFormula: formula,
+      baseId: PA_BASE_ID,
+    });
+    sections.sort((a, b) => ((a.fields.order as number) ?? 0) - ((b.fields.order as number) ?? 0));
+    for (const section of sections) {
+      const createdSection = await createRecord(
+        apiKey,
+        PA_TABLE_IDS.productPageSections,
+        { ...section.fields },
+        PA_BASE_ID,
+      );
+      newSectionIds.push(createdSection.id);
+    }
+  }
+
+  // Product/Solution records are shared by reference. Owned sections are
+  // rewired to the freshly-created copies above.
   const fields: Record<string, unknown> = { ...source.fields };
-  fields.Name = newName;
-  fields.Slug = newSlug;
+  fields.name = newName;
+  fields.slug = newSlug;
+  fields.section_ids = newSectionIds;
 
   const newPa = await createRecord(apiKey, PA_TABLE_IDS.productAreas, fields, PA_BASE_ID);
 
