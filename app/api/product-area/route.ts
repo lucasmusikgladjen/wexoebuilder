@@ -9,8 +9,8 @@
  * `?action=list-divisions` är borttagen — server-pages använder
  * loadDivisions() direkt istället för att gå via routen.
  *
- * Product Area-familjen ligger fortfarande kvar i legacy-basen — `baseId`
- * är wired på productAreaServer.
+ * Product Area-familjen ligger i Wexoe NY och hämtar `baseId` från
+ * productAreaServer/PA_BASE_ID så route, loader och copy delar samma sanning.
  */
 
 import { productAreaServer, loadProductAreaState } from '@/lib/page-types/product-area.server';

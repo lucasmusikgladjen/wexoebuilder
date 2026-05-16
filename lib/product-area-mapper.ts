@@ -8,8 +8,8 @@
  *
  * Post-migration: PA-familjen ligger i Wexoe NY (cms_product_pages +
  * cms_product_page_sections + cms_products + cms_solutions_mini). Alla
- * fältnamn är snake_case. PA_BASE_ID är nu alias till BASE_ID; konstanten
- * lever kvar så att kallar-koden inte behöver röras när vi flippade.
+ * fältnamn är snake_case. PA_BASE_ID kommer från den centrala AIRTABLE_FAMILIES-registryn;
+ * konstanten lever kvar som bakåtkompatibelt familjealias för kallar-koden.
  */
 
 import {
@@ -20,8 +20,9 @@ import {
   LinkedArticleReadonly,
   generateClientId,
 } from './product-area-types';
-import { AirtableRecord, BASE_ID } from './airtable';
-import { AirtableFields as Fields, str, bool, num } from './airtable-helpers';
+import { AirtableRecord } from './airtable';
+import { PRODUCT_AREA_TABLE_IDS, AIRTABLE_FAMILIES } from './airtable-registry';
+import { str, bool, num } from './airtable-helpers';
 import { contactFormFromFields } from './contact-form-mapper';
 
 // ─── Table IDs (Product Area family) ───────────────────────────────────────
@@ -30,16 +31,8 @@ import { contactFormFromFields } from './contact-form-mapper';
 // `Normal 1-4`-pseudo-array-fälten har lyfts ut till sub-records i
 // cms_product_page_sections; PA-recordet pekar på dem via `section_ids`.
 
-export const PA_BASE_ID = BASE_ID;
-
-export const PA_TABLE_IDS = {
-  productAreas: 'tbl5PQR7FNHCogeya',       // cms_product_pages
-  productPageSections: 'tbl1r3T3ukIPJ0S3N', // cms_product_page_sections (NEW)
-  products: 'tblN23V7uAMpeZoO1',            // cms_products
-  articles: 'tblhnz3MQG1JwfKrN',            // cms_articles
-  solutions: 'tblxK7ikOgLFuze6m',           // cms_solutions_mini
-  divisions: 'tblyxs2zsoRBozxQS',           // core_divisions
-} as const;
+export const PA_BASE_ID = AIRTABLE_FAMILIES.productArea.baseId;
+export const PA_TABLE_IDS = PRODUCT_AREA_TABLE_IDS;
 
 // ─── Reverse: Airtable → state ─────────────────────────────────────────────
 

@@ -109,7 +109,7 @@ export const PAGE_TYPES = definePageTypes([
     label: 'Landing',
     description: 'Kampanj- och konverteringssida',
     creatable: true,
-    listUrl: '/api/read?action=list',
+    listUrl: '/api/landing?action=list',
     createPath: '/editor',
     editPath: (id) => `/editor/${id}`,
     cacheEntities: LP_ENTITIES,

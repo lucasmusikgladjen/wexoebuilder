@@ -10,26 +10,8 @@
  * migrerats. Tabeller där: pass `baseId: LEGACY_BASE_ID` explicit.
  */
 
-export const BASE_ID = 'appokKSTaBdCa8YiW';
-
-/** Legacy Wexoe-basen — endast för icke-migrerade tabeller (PA, audience). */
-export const LEGACY_BASE_ID = 'appXoUcK68dQwASjF';
-
-/** Bakåtkompatibelt alias — pekar nu på samma bas som BASE_ID. */
-export const SSOT_BASE_ID = BASE_ID;
-
-/**
- * Table IDs i Wexoe NY. Håll i synk med
- * `wexoeplugins/wexoe-core/entities/*.php` och `lib/core/registry.ts`.
- */
-export const TABLE_IDS = {
-  landingPages: 'tblpPlk17FZIKawXY',
-  landingPageTabs: 'tblp8d32aj5BgGMvE',
-  landingPageDownloads: 'tbltAtilGKnQ2wc7I',
-  // Legacy aliases (matches old key names while we phase out)
-  tabs: 'tblp8d32aj5BgGMvE',
-  downloads: 'tbltAtilGKnQ2wc7I',
-} as const;
+export { BASE_ID, LEGACY_BASE_ID, SSOT_BASE_ID, TABLE_IDS } from './airtable-registry';
+import { BASE_ID } from './airtable-registry';
 
 function resolveBaseId(baseId?: string): string {
   return baseId && baseId.length > 0 ? baseId : BASE_ID;

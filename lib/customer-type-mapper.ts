@@ -2,21 +2,19 @@
  * Forward and reverse mapping between Airtable `cms_customer_type_pages`
  * records och `CustomerTypePageState`.
  *
- * Schema är flat (en linked-record-länk till cms_case_pages, ingen Claude-
- * transform). snake_case-konvention både i Airtable och här.
+ * Schema är flat (en linked-record-länk till cms_case_pages). Skrivvägen
+ * går via Claude-transform, medan denna fil sköter reverse-load till state.
+ * snake_case-konvention både i Airtable och här.
  */
 
-import { AirtableRecord, BASE_ID } from './airtable';
+import { AirtableRecord } from './airtable';
+import { AIRTABLE_FAMILIES, CUSTOMER_TYPE_TABLE_IDS as AIRTABLE_CUSTOMER_TYPE_TABLE_IDS } from './airtable-registry';
 import { CustomerTypePageState } from './customer-type-types';
 import { str, bool } from './airtable-helpers';
 import { contactFormFromFields } from './contact-form-mapper';
 
-export const CUSTOMER_TYPE_BASE_ID = BASE_ID;
-
-export const CUSTOMER_TYPE_TABLE_IDS = {
-  customerTypePages: 'tblZufoWVNKPuJdMK',
-  casePages: 'tbl3uMV6IpRIZeucA',
-} as const;
+export const CUSTOMER_TYPE_BASE_ID = AIRTABLE_FAMILIES.customerType.baseId;
+export const CUSTOMER_TYPE_TABLE_IDS = AIRTABLE_CUSTOMER_TYPE_TABLE_IDS;
 
 function strArray(fields: Record<string, unknown>, key: string): string[] {
   const v = fields[key];
