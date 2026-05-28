@@ -101,12 +101,12 @@ export default function EditorPanel({ state, dispatch, activeSection, onSectionC
   return (
     <div className="h-full flex flex-col bg-white border-l border-gray-100">
       {/* Section quick-nav */}
-      <div className="flex px-3 py-2 gap-0.5 flex-shrink-0 overflow-x-auto border-b border-gray-100">
+      <div className="flex flex-wrap px-3 py-2 gap-x-1 gap-y-1.5 flex-shrink-0 overflow-hidden border-b border-gray-100">
         {sections.map((s) => (
           <button
             key={s.id}
             onClick={() => onSectionClick(s.id)}
-            className={`px-2.5 py-1 rounded-full text-xs transition-colors whitespace-nowrap ${
+            className={`max-w-full px-2.5 py-1 rounded-full text-xs transition-colors break-words ${
               activeSection === s.id
                 ? 'bg-gray-100 text-gray-600'
                 : 'text-gray-400 hover:text-gray-500'

@@ -29,7 +29,7 @@ export interface BuilderShellProps {
   activeSection?: string | null;
   /** Called when user clicks a quick-nav pill or one of the section refs in the editor. */
   onActiveSectionChange?: (id: string) => void;
-  /** The preview pane (left column, ~65% width). */
+  /** The preview pane (left column, flexar efter tillgänglig bredd). */
   previewPanel: ReactNode;
   /** Render the editor sections. Receives ref-setter so BuilderShell can do scroll-sync. */
   editorSections: (helpers: {
@@ -42,7 +42,7 @@ export interface BuilderShellProps {
  * BuilderShell — shared layout for builder pages (CustomerType, LP, PA, CmsPage,
  * /globals/*). Owns:
  *   - Top toolbar (back link, slug input slot, status, save button)
- *   - Split layout (65% preview, 35% editor)
+ *   - Split layout (responsiv: preview + editor som båda växer med viewport)
  *   - Quick-nav pills row above editor
  *   - Scroll-sync between editor section refs and active-section state
  *
@@ -57,11 +57,17 @@ export default function BuilderShell({
   previewPanel,
   editorSections,
 }: BuilderShellProps) {
+  const DEFAULT_EDITOR_WIDTH = 600;
+  const MIN_EDITOR_WIDTH = 480;
+  const MAX_EDITOR_WIDTH = 960;
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const layoutRef = useRef<HTMLDivElement | null>(null);
   const scrollDetectedRef = useRef(false);
   const isProgrammaticScroll = useRef(false);
   const activeSectionRef = useRef(activeSection);
+  const [editorWidth, setEditorWidth] = useState(DEFAULT_EDITOR_WIDTH);
+  const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
     activeSectionRef.current = activeSection;
@@ -157,6 +163,32 @@ export default function BuilderShell({
 
   const backHref = toolbar.backHref ?? '/';
   const backLabel = toolbar.backLabel ?? 'Sidor';
+  const handleResizeStart = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (window.innerWidth < 1024) return;
+    event.preventDefault();
+    const pointerId = event.pointerId;
+    const layout = layoutRef.current;
+    if (!layout) return;
+    event.currentTarget.setPointerCapture(pointerId);
+    setIsResizing(true);
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      const bounds = layout.getBoundingClientRect();
+      const wanted = bounds.right - moveEvent.clientX;
+      const maxAllowed = Math.max(MIN_EDITOR_WIDTH, bounds.width - 360);
+      const next = Math.min(Math.max(wanted, MIN_EDITOR_WIDTH), Math.min(MAX_EDITOR_WIDTH, maxAllowed));
+      setEditorWidth(next);
+    };
+
+    const onPointerUp = () => {
+      setIsResizing(false);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  }, []);
 
   return (
     <div className="h-screen flex flex-col" style={{ fontFamily: 'var(--font-dm-sans)' }}>
@@ -182,17 +214,34 @@ export default function BuilderShell({
         {toolbar.right}
       </header>
 
-      <div className="flex-1 flex min-h-0">
-        <div className="flex-[65] min-w-0">{previewPanel}</div>
+      <div
+        ref={layoutRef}
+        className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_var(--editor-width)]"
+        style={{
+          ['--editor-width' as string]: `${editorWidth}px`,
+          ['--builder-preview-max' as string]: '1280px',
+        }}
+      >
+        <div className="min-w-0 min-h-0">{previewPanel}</div>
 
-        <div className="flex-[35] min-w-[380px] max-w-[520px] h-full flex flex-col bg-white border-l border-gray-100">
+        <div className="relative min-w-0 min-h-0 lg:min-w-[30rem] h-full flex flex-col bg-white border-t lg:border-t-0 lg:border-l border-gray-100">
+          <div
+            role="separator"
+            aria-label="Ändra bredd mellan preview och editor"
+            aria-orientation="vertical"
+            onPointerDown={handleResizeStart}
+            className={`hidden lg:flex absolute inset-y-0 -left-2 w-4 cursor-col-resize z-20 items-center justify-center ${isResizing ? 'bg-blue-200/50' : 'hover:bg-gray-100/80'}`}
+            title="Dra för att ändra panelbredd"
+          >
+            <span className="h-16 w-px bg-gray-300" />
+          </div>
           {quickNav && quickNav.length > 0 && (
-            <div className="flex flex-wrap px-3 py-2 gap-x-0.5 gap-y-1 flex-shrink-0 border-b border-gray-100">
+            <div className="flex flex-wrap px-3 py-2 gap-x-1 gap-y-1.5 flex-shrink-0 border-b border-gray-100 overflow-hidden">
               {quickNav.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => handleQuickNavClick(s.id)}
-                  className={`px-2.5 py-1 rounded-full text-xs transition-colors whitespace-nowrap ${
+                  className={`max-w-full px-2.5 py-1 rounded-full text-xs transition-colors break-words ${
                     activeSection === s.id
                       ? 'bg-gray-100 text-gray-600'
                       : 'text-gray-400 hover:text-gray-500'

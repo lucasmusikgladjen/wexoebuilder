@@ -27,7 +27,7 @@ export default function PreviewPanel({ state, activeSection, onSectionClick, scr
 
   return (
     <div className="h-full overflow-y-auto bg-gray-100 hide-scrollbar">
-      <div className="max-w-[900px] mx-auto my-4 shadow-lg rounded-lg overflow-hidden bg-white">
+      <div className="builder-preview-canvas mx-auto my-4 shadow-lg rounded-lg overflow-hidden bg-white">
         {/* Preview label */}
         <div className="bg-gray-50 border-b border-gray-200 px-4 py-1.5 flex items-center gap-2">
           <div className="flex gap-1.5">

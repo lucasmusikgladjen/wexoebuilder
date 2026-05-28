@@ -102,7 +102,7 @@ export default function CmsPagePreview({
   const hasHero = state.sections.some((s) => s.type === 'hero');
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-100 p-6">
+    <div className="h-full overflow-y-auto hide-scrollbar bg-gray-100 p-6">
       <div ref={pageRef} className={`max-w-4xl mx-auto shadow-sm ${themeBg}`}>
         {/* Metadata-strip — fungerar som metadata-panelens scroll-target */}
         <div data-section="metadata" className="px-6 py-3 border-b border-gray-100 bg-gray-50 text-[11px] text-gray-500 flex items-center gap-4">
