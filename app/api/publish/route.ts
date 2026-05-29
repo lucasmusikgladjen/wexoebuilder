@@ -178,11 +178,15 @@ async function createNewPage(
   });
   if (preflightDownloadRefError) return preflightDownloadRefError;
 
-  // 2. CREATE the Landing Page record
+  // 2. CREATE the Landing Page record. case_id (sidebar_type=case → cms_cases)
+  //    är en backend-hanterad länk, satt direkt här i stället för via Claude.
   const lp = await createRecord(
     airtableKey,
     TABLE_IDS.landingPages,
-    transformed.landingPage,
+    {
+      ...transformed.landingPage,
+      case_id: state.sidebarType === 'case' && state.caseId ? [state.caseId] : [],
+    },
   );
 
   // 3. CREATE tabs linked to the new LP. Preserve state order via
@@ -307,6 +311,8 @@ async function updateExistingPage(
   await updateRecord(airtableKey, TABLE_IDS.landingPages, state.recordId, {
     ...sidebarClears,
     ...transformed.landingPage,
+    // Backend-hanterad länk: sätt valt case, eller töm när sidebar ≠ case.
+    case_id: state.sidebarType === 'case' && state.caseId ? [state.caseId] : [],
   });
 
   // 4. Diff tabs. We pair Claude's `tabs` output with `state.tabs` via
