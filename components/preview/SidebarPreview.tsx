@@ -2,6 +2,7 @@
 
 import { PageState } from '@/lib/types';
 import { renderInlineMarkdown } from '@/lib/markdown';
+import { useLinkedRecord } from '@/lib/linked-records-cache';
 
 interface Props {
   state: PageState;
@@ -19,34 +20,45 @@ export default function SidebarPreview({ state }: Props) {
 }
 
 function CaseSidebar({ state, mainColor, secondaryColor }: { state: PageState; mainColor: string; secondaryColor: string }) {
-  const outcomes = state.caseOutcomes.split('\n').map(o => o.trim()).filter(Boolean);
+  const c = useLinkedRecord('cases', state.caseId);
+
+  if (!state.caseId) {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-xs text-gray-500">
+        Inget kundcase valt — välj ett i sidebar-inställningarna.
+      </div>
+    );
+  }
+
+  const title = (c?.card_title as string) || (c?.title as string) || 'Kundcase';
+  const image = (c?.card_image_url as string) || '';
+  const desc = (c?.card_description as string) || '';
+  const result = (c?.card_result as string) || '';
+  const cta = (c?.card_cta_text as string) || '';
+
   return (
     <div className="rounded-lg overflow-hidden border border-gray-200 bg-white shadow-sm">
       <div className="px-4 py-3 text-white text-sm font-semibold" style={{ background: mainColor }}>
-        {state.caseTitle || 'Kundcase'}
+        {title}
       </div>
-      {state.caseImage && (
-        <img src={state.caseImage} alt="" className="w-full h-36 object-cover" />
+      {image && (
+        <img src={image} alt="" className="w-full h-36 object-cover" />
       )}
       <div className="p-4 space-y-3">
-        {state.caseDescription && (
+        {desc && (
           <p className="text-xs text-lp-text-light leading-relaxed">
-            {renderInlineMarkdown(state.caseDescription)}
+            {renderInlineMarkdown(desc)}
           </p>
         )}
-        {outcomes.length > 0 && (
-          <ul className="space-y-1.5">
-            {outcomes.map((o, i) => (
-              <li key={i} className="flex items-start gap-2 text-xs">
-                <span className="text-green-600 font-bold mt-px">▸</span>
-                <span>{renderInlineMarkdown(o)}</span>
-              </li>
-            ))}
-          </ul>
+        {result && (
+          <div className="flex items-start gap-2 text-xs">
+            <span className="text-green-600 font-bold mt-px">▸</span>
+            <span>{renderInlineMarkdown(result)}</span>
+          </div>
         )}
-        {state.caseCta && (
+        {cta && (
           <span className="inline-block px-4 py-1.5 rounded text-xs font-semibold text-white" style={{ background: secondaryColor }}>
-            {state.caseCta}
+            {cta}
           </span>
         )}
       </div>

@@ -65,6 +65,12 @@ export const CMS_LINKED_SOURCES = {
       'industry',
       'lead_image_url',
       'is_active',
+      // Kort-lager — låter pickers/previews (t.ex. LP case-sidebar) visa kortet.
+      'card_title',
+      'card_description',
+      'card_result',
+      'card_image_url',
+      'card_cta_text',
     ] as const,
     sortField: 'slug',
   },

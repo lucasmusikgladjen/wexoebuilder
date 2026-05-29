@@ -33,12 +33,7 @@ Airtable display-namn för LP-familjen.
 | **content_text** | multilineText | Brödtext (stöder markdown). |
 | **content_benefits** | multilineText | En benefit per rad, `\n`-separerad. |
 | **sidebar_type** | singleSelect | Ett av: `case`, `event`, `leadmagnet`, `calculator`, eller tom sträng. |
-| **case_title** | singleLineText | Endast om `sidebar_type = case`. |
-| **case_description** | multilineText | Endast om `sidebar_type = case`. |
-| **case_image_url** | url | Endast om `sidebar_type = case`. |
-| **case_outcomes** | multilineText | Endast om `sidebar_type = case`. En per rad. |
-| **case_cta_text** | singleLineText | Endast om `sidebar_type = case`. |
-| **case_cta_url** | url | Endast om `sidebar_type = case`. |
+| **case_id** | multipleRecordLinks | Endast om `sidebar_type = case`. Länk till ETT cms_cases-record; sidebaren renderar dess kort-lager (card_*) + permalink. **Hanteras av backend, inkludera ej i Claudes output.** |
 | **calc_title** | singleLineText | Endast om `sidebar_type = calculator`. |
 | **calc_html** | multilineText | Endast om `sidebar_type = calculator`. HTML/CSS/JS. |
 | **event_type** | singleLineText | Endast om `sidebar_type = event`. |
@@ -170,7 +165,7 @@ Claude ska **tolka** och **städa** user-edited data innan den går till Airtabl
    backend sätta explicit `""` för fält som ska rensas — men Claude behöver inte
    bry sig om det.
 
-2. **content_benefits / case_outcomes / ti_benefits:** Om input ser ut som en paragraf
+2. **content_benefits / ti_benefits:** Om input ser ut som en paragraf
    eller kommaseparerad lista, splitta till en per rad (`\n`).
 
 3. **faq_items:** Säkerställ att varje fråga har `Q: `-prefix och varje svar `A: `-prefix.

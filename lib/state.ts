@@ -72,12 +72,7 @@ export const initialState: PageState = {
   contentBenefits: '',
 
   sidebarType: '',
-  caseTitle: '',
-  caseDescription: '',
-  caseImage: '',
-  caseOutcomes: '',
-  caseCta: '',
-  caseCtaUrl: '',
+  caseId: '',
   eventType: '',
   eventTitle: '',
   eventDescription: '',

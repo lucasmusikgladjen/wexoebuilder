@@ -96,12 +96,9 @@ export interface PageState {
 
   // Sidebar
   sidebarType: SidebarType;
-  caseTitle: string;
-  caseDescription: string;
-  caseImage: string;
-  caseOutcomes: string;
-  caseCta: string;
-  caseCtaUrl: string;
+  /** sidebar_type=case → ETT länkat cms_cases-record (record-id). Kortet
+   *  (titel/bild/resultat/CTA) hämtas från caset, inte inline längre. */
+  caseId: string;
   eventType: string;
   eventTitle: string;
   eventDescription: string;

@@ -311,16 +311,10 @@ function buildLpPayload(state: PageState, mode: TransformMode): string {
     showContact: state.showContact,
   };
 
-  if (state.sidebarType === 'case') {
-    Object.assign(data, {
-      caseTitle: state.caseTitle,
-      caseDescription: state.caseDescription,
-      caseImage: state.caseImage,
-      caseOutcomes: state.caseOutcomes,
-      caseCta: state.caseCta,
-      caseCtaUrl: state.caseCtaUrl,
-    });
-  } else if (state.sidebarType === 'event') {
+  // sidebar_type=case har inga inline-fält längre — caset länkas via case_id
+  // (multipleRecordLinks → cms_cases) som backend sätter direkt i /api/publish,
+  // utanför Claude-transformen (samma mönster som tab_ids).
+  if (state.sidebarType === 'event') {
     Object.assign(data, {
       eventType: state.eventType,
       eventTitle: state.eventTitle,
@@ -1451,14 +1445,10 @@ export async function transformCmsPage(
 // (or `false` for the one checkbox) so switching a tab from `textimage` to
 // `faq` — or an LP sidebar from `case` to `event` — wipes the old data.
 
-export const LP_SIDEBAR_CASE_FIELDS = [
-  'case_title',
-  'case_description',
-  'case_image_url',
-  'case_outcomes',
-  'case_cta_text',
-  'case_cta_url',
-];
+// Case-sidebaren har inga inline-fält längre — caset länkas via case_id
+// (hanteras av /api/publish, inte stale-clearing här). Tom lista = inga
+// text-fält att rensa när man byter bort från `case`.
+export const LP_SIDEBAR_CASE_FIELDS: string[] = [];
 export const LP_SIDEBAR_EVENT_FIELDS = [
   'event_type',
   'event_title',

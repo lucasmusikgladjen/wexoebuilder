@@ -2,8 +2,8 @@
 
 import { PageState, PageAction, SidebarType } from '@/lib/types';
 import { FieldInput, FieldTextarea, FieldSelect, RichTextarea } from './FieldInput';
-import ButtonFieldset from './ButtonFieldset';
 import EditorSection from './EditorSection';
+import { Field } from '@/components/shared/fields';
 
 interface Props {
   state: PageState;
@@ -46,24 +46,14 @@ export default function SidebarEditor({ state, dispatch }: Props) {
 function CaseFields({ state, set }: { state: PageState; set: (f: keyof PageState, v: unknown) => void }) {
   return (
     <div className="space-y-3">
-      <FieldInput label="Titel" value={state.caseTitle} onChange={(v) => set('caseTitle', v)} placeholder="Kundcase: Företaget AB" />
-      <RichTextarea label="Beskrivning" value={state.caseDescription} onChange={(v) => set('caseDescription', v)} rows={6} placeholder="Kort beskrivning av caset..." />
-      <FieldInput label="Bild" value={state.caseImage} onChange={(v) => set('caseImage', v)} placeholder="https://..." />
-      <RichTextarea label="Resultat" value={state.caseOutcomes} onChange={(v) => set('caseOutcomes', v)} rows={6} hint="en per rad" placeholder={"40% snabbare installation\n60% lägre driftkostnad"} />
-      <ButtonFieldset
-        label="Knapp"
-        segments={[
-          {
-            value: state.caseCta,
-            onChange: (v) => set('caseCta', v),
-            placeholder: 'Text',
-          },
-          {
-            value: state.caseCtaUrl,
-            onChange: (v) => set('caseCtaUrl', v),
-            placeholder: 'URL',
-          },
-        ]}
+      <Field.LinkedRecords
+        label="Kundcase"
+        source="cases"
+        value={state.caseId ? [state.caseId] : []}
+        onChange={(ids) => set('caseId', ids.length ? ids[ids.length - 1] : '')}
+        max={1}
+        filter={(r) => r.is_active !== false}
+        description="Välj ett kundcase. Kortet (titel, bild, resultat, CTA) hämtas från cms_cases — redigera caset där."
       />
     </div>
   );

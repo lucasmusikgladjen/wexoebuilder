@@ -19,7 +19,7 @@ import {
 import { createEmptyTab, initialState } from './state';
 import { AirtableRecord } from './airtable';
 import { ContactFormState } from './contact-form-types';
-import { str, bool, num } from './airtable-helpers';
+import { str, bool, num, linkedIds } from './airtable-helpers';
 import {
   contactFormFromFields,
   contactFormToFields as sharedContactFormToFields,
@@ -178,12 +178,7 @@ export function pageStateFromRecords(args: {
     contentBenefits: str(f, 'content_benefits'),
 
     sidebarType,
-    caseTitle: str(f, 'case_title'),
-    caseDescription: str(f, 'case_description'),
-    caseImage: str(f, 'case_image_url'),
-    caseOutcomes: str(f, 'case_outcomes'),
-    caseCta: str(f, 'case_cta_text'),
-    caseCtaUrl: str(f, 'case_cta_url'),
+    caseId: linkedIds(f, 'case_id')[0] ?? '',
     eventType: str(f, 'event_type'),
     eventTitle: str(f, 'event_title'),
     eventDescription: str(f, 'event_description'),
