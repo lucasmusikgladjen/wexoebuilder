@@ -20,7 +20,6 @@ import {
   CaseGridSection,
   CatalogSection,
   emptyCmsPageState,
-  emptySection,
   FaqSection,
   GridCols,
   HeroSection,

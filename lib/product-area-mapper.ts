@@ -21,7 +21,7 @@ import {
   generateClientId,
 } from './product-area-types';
 import { AirtableRecord, BASE_ID } from './airtable';
-import { AirtableFields as Fields, str, bool, num } from './airtable-helpers';
+import { str, bool, num } from './airtable-helpers';
 import { contactFormFromFields } from './contact-form-mapper';
 
 // ─── Table IDs (Product Area family) ───────────────────────────────────────
