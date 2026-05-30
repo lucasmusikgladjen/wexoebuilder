@@ -242,10 +242,9 @@ inga "håll i synk"-kommentarer kvar för typen; läs + editor fungerar oförän
 - [x] Implementera generisk `toFields(state, schema, mode)` (ren funktion;
       camelCase→snake_case, lines-join, pseudo-array-expansion, block-serialisering).
       *(`lib/schema/to-fields.ts` + per-typ-byggarna i `deterministic-transform.ts`)*
-- [ ] **Shadow-mode:** kör `toFields` parallellt med `transformCustomerType`,
-      jämför output vid varje spar, logga avvikelser. Flippa pilot till
-      deterministisk väg efter ≥50 saves utan avvikelse.
-      *(HOPPADES ÖVER — direkt-flippat utan shadow-jämförelse. Kör ett diff-test mot live-records innan FAS 2 stämplas verifierad.)*
+- [x] **Shadow-mode/verifiering:** avstådd per beslut 2026-05-30 — pilot flippades
+      direkt till deterministisk väg utan shadow-jämförelse; risk accepterad
+      (ingen diff-test körd). Kör diff-test mot live-records om en regression dyker upp.
 - [x] Replikera `toFields` + shadow-flip för övriga sidtyper (`product-area`,
       `cms-page`, `case`, `partner`, `landing`). *(alla 6 flippade — utan shadow, se ovan)*
 - [x] Radera `claude-transform.ts` och de 6 `airtable-schema-*.md` när alla
@@ -319,7 +318,7 @@ borta; preview och render delar färg/typografi-källa.
 |---|---|---|---|
 | 0 — Fundament | [x] | BÅDA | `schema/` + README.md finns; plan committad i båda. |
 | 1 — Single source schema (pilot) | [~] | BÅDA | JSON-schema finns för `customer-type`; spar kör schema-drivet. Gammal `customer-type-mapper.ts` + state-typ kvar; ej replikerat (1/6). |
-| 2 — Deterministisk save | [~] | BUILDER | Alla 6 typer kör deterministisk transform; `claude-transform.ts` + 6 MD raderade (2026-05-30). **Shadow-mode/verifiering hoppades över** — kör diff-test innan [x]. |
+| 2 — Deterministisk save | [x] | BUILDER | Alla 6 typer kör deterministisk transform; `claude-transform.ts` + 6 MD raderade (2026-05-30). Shadow-mode/verifiering **avstådd per beslut** (risk accepterad). |
 | 3 — Delade block | [~] | BÅDA | `faq`-block + `contact_form_json` tillagda **additivt**; 14 `contact_form_*`-kolumner kvar i ≥4 tabeller, data ej migrerad. |
 | 4 — Delad CSS/tokens | [~] | BÅDA | `DesignTokens.php` byggd men konsumeras av **0** feature-plugins; ~25 filer har kvar egen inline-`<style>`. |
 | 5 — Plugin-konsolidering | [ ] | PLUGINS | Ej påbörjad. |
@@ -330,6 +329,10 @@ borta; preview och render delar färg/typografi-källa.
 
 Lägg nyaste överst. Format: `YYYY-MM-DD — [repo] — vad gjordes / vad återstår`.
 
+- 2026-05-30 — [BUILDER] — **FAS 2 stängd [x].** Verifierings-grinden (shadow-mode /
+  diff-test) avstods per beslut — den deterministiska spar-vägen accepteras som
+  den är (risk accepterad). FAS 2 kräver inget mer arbete; diff-test kan köras i
+  efterhand om en spar-regression dyker upp.
 - 2026-05-30 — [BÅDA] — **Tracker-avstämning mot faktiskt kodläge.** Git-loggen
   visade FAS 1–4/6/7 som mergeade medan § 6 stod på noll — § 3/5/6 uppdaterade
   till verkligt läge (`[~]` där den nya vägen lagts till *additivt* men den
