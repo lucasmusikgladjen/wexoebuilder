@@ -173,7 +173,7 @@ export function buildPartnerFields(state: PartnerPageState, mode: WriteMode): Ou
   putBool(out, 'show_contact_form', state.showContactForm);
   Object.assign(
     out,
-    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update' }),
+    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update', emitJson: true }),
   );
 
   return out;
@@ -295,7 +295,7 @@ export function buildCaseFields(state: CaseState, mode: WriteMode): Out {
   putBool(out, 'show_contact_form', state.showContactForm);
   Object.assign(
     out,
-    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update' }),
+    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update', emitJson: true }),
   );
 
   return out;
@@ -355,7 +355,7 @@ function buildPaParentFields(state: ProductAreaState, mode: WriteMode): Out {
   putBool(o, 'show_contact_form', state.showContactForm);
   Object.assign(
     o,
-    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update' }),
+    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update', emitJson: true }),
   );
   return o;
 }
@@ -503,7 +503,7 @@ function buildLpParentFields(state: PageState, mode: WriteMode): Out {
   putBool(o, 'show_contact_form', state.showContactForm);
   Object.assign(
     o,
-    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update' }),
+    contactFormToFields(state.contactForm, { schema: 'snake_case', nullForEmpty: mode === 'update', emitJson: true }),
   );
   return o;
 }
