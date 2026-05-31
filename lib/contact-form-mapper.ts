@@ -143,25 +143,28 @@ export function coerceContactForm(raw: unknown): ContactFormState {
 }
 
 /**
- * Serialiserar blocket till JSON-spegeln (camelCase, stabil nyckelordning).
- * Oberoende av per-tabell flat-fält-naming — samma blob delas av alla sidtyper.
+ * Serialiserar blocket till JSON-spegeln. **snake_case, oprefixade nycklar** —
+ * samma naming som Airtable-fälten och som `ContactForm::render` (PHP) vill ha,
+ * så PHP-läsningen blir en ren `json_decode` utan nyckel-översättning. Stabil
+ * nyckelordning. Oberoende av per-tabell flat-fält-naming — samma blob delas av
+ * alla sidtyper.
  */
 export function contactFormToJson(state: ContactFormState): string {
-  const payload: ContactFormState = {
+  const payload = {
     eyebrow: state.eyebrow,
     title: state.title,
     subtitle: state.subtitle,
     layout: state.layout,
     theme: state.theme,
-    showCompany: state.showCompany,
-    showPhone: state.showPhone,
-    showDropdown: state.showDropdown,
-    dropdownLabel: state.dropdownLabel,
+    show_company: state.showCompany,
+    show_phone: state.showPhone,
+    show_dropdown: state.showDropdown,
+    dropdown_label: state.dropdownLabel,
     options: state.options,
-    ctaText: state.ctaText,
-    messageLabel: state.messageLabel,
-    trustSignals: state.trustSignals,
-    showContactPerson: state.showContactPerson,
+    cta_text: state.ctaText,
+    message_label: state.messageLabel,
+    trust_signals: state.trustSignals,
+    show_contact_person: state.showContactPerson,
   };
   return JSON.stringify(payload);
 }
@@ -169,6 +172,9 @@ export function contactFormToJson(state: ContactFormState): string {
 /**
  * Parsar JSON-spegeln → `ContactFormState`. Returnerar `null` när värdet saknas
  * eller inte är giltig JSON, så callers kan falla tillbaka på de flata fälten.
+ *
+ * JSON lagras i snake_case (se `contactFormToJson`); här mappas nycklarna till
+ * den camelCase-form `coerceContactForm` förväntar sig.
  */
 export function contactFormFromJson(raw: unknown): ContactFormState | null {
   if (typeof raw !== 'string' || raw.trim() === '') return null;
@@ -179,7 +185,23 @@ export function contactFormFromJson(raw: unknown): ContactFormState | null {
     return null;
   }
   if (!parsed || typeof parsed !== 'object') return null;
-  return coerceContactForm(parsed);
+  const o = parsed as Record<string, unknown>;
+  return coerceContactForm({
+    eyebrow: o.eyebrow,
+    title: o.title,
+    subtitle: o.subtitle,
+    layout: o.layout,
+    theme: o.theme,
+    showCompany: o.show_company,
+    showPhone: o.show_phone,
+    showDropdown: o.show_dropdown,
+    dropdownLabel: o.dropdown_label,
+    options: o.options,
+    ctaText: o.cta_text,
+    messageLabel: o.message_label,
+    trustSignals: o.trust_signals,
+    showContactPerson: o.show_contact_person,
+  });
 }
 
 export function contactFormFromFields(
